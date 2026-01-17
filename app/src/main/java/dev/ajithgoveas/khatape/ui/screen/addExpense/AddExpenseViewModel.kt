@@ -10,7 +10,7 @@ import dev.ajithgoveas.khatape.domain.model.TransactionDirection
 import dev.ajithgoveas.khatape.domain.usecase.AddTransactionUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetFriendByIdUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetFriendSummaryByIdUseCase
-import jakarta.inject.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

@@ -11,7 +11,7 @@ import dev.ajithgoveas.khatape.domain.usecase.DeleteFriendUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetFriendByIdUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetFriendSummaryByIdUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetTransactionsForFriendUseCase
-import jakarta.inject.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

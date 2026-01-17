@@ -5,14 +5,14 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.ajithgoveas.khatape.domain.model.FriendSummary
 import dev.ajithgoveas.khatape.domain.usecase.GetFriendSummariesUseCase
-import jakarta.inject.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val getFriendSummariesUseCase: GetFriendSummariesUseCase
+    getFriendSummariesUseCase: GetFriendSummariesUseCase
 ) : ViewModel() {
 
     val summaries: StateFlow<List<FriendSummary>> =
