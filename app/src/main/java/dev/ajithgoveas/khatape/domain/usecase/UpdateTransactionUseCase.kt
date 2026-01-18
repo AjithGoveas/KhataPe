@@ -12,10 +12,11 @@ class UpdateTransactionUseCase @Inject constructor(
         amount: Double,
         direction: TransactionDirection,
         description: String,
+        dueDate: Long?,
         timestamp: Long
     ) {
         transactionRepository.updateTransaction(
-            transactionId, amount, direction, description, timestamp
+            transactionId, amount, direction, description, dueDate, timestamp
         )
     }
 }

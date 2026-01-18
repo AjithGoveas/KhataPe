@@ -47,3 +47,12 @@ dev.ajith.khatape/
 ├── MainActivity.kt              // Entry point
 └── KhataPe.kt                   // App-level Composable with NavHost
 ```
+
+## Future Enhancements
+
+- Implement notifications for due payments.
+- Implement group expense splitting functionality.
+- Add analytics and reporting features.
+- Hamburger menu for delete friend transaction and add more settings like pinned transactions, sort transactions.
+- Improve UI/UX with animations and better theming options.
+- Add localization support for multiple languages.

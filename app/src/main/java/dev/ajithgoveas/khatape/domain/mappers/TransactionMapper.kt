@@ -10,6 +10,7 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     direction = direction,
     description = description,
     isSettled = isSettled,
+    dueDate = dueDate,
     timestamp = timestamp
 )
 
@@ -20,5 +21,6 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     direction = direction,
     description = description,
     isSettled = isSettled,
+    dueDate = dueDate,
     timestamp = timestamp
 )

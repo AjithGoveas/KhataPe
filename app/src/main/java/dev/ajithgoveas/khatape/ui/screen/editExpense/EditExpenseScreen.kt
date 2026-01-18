@@ -93,15 +93,26 @@ fun ExpenseForm(
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {
-    var showDatePicker by remember { mutableStateOf(false) }
+    var showDateToday by remember { mutableStateOf(false) }
+    var showDateDue by remember { mutableStateOf(false) }
 
-    if (showDatePicker) {
+    if (showDateToday) {
         DatePickerDialogModal(
             initialDateMillis = formState.timestamp,
             onDateSelected = { millis ->
                 onEvent(ExpenseEvent.TimestampChanged(millis ?: formState.timestamp))
             },
-            onDismiss = { showDatePicker = false }
+            onDismiss = { showDateToday = false }
+        )
+    }
+
+    if (showDateDue) {
+        DatePickerDialogModal(
+            initialDateMillis = formState.dueDate ?: System.currentTimeMillis(),
+            onDateSelected = { millis ->
+                onEvent(ExpenseEvent.DueDateChanged(millis ?: formState.dueDate))
+            },
+            onDismiss = { showDateDue = false }
         )
     }
 
@@ -165,7 +176,7 @@ fun ExpenseForm(
         )
 
         OutlinedButton(
-            onClick = { showDatePicker = true },
+            onClick = { showDateToday = true },
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
         ) {
@@ -183,6 +194,30 @@ fun ExpenseForm(
                         .format(DateTimeFormatter.ISO_LOCAL_DATE)
                 }"
             )
+        }
+
+        OutlinedButton(
+            onClick = { showDateDue = true },
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Icon(
+                Icons.Filled.CalendarToday,
+                contentDescription = "Select Due Date",
+                modifier = Modifier.size(ButtonDefaults.IconSize)
+            )
+            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+            Text(
+                "Due Date: ${
+                    formState.dueDate?.let {
+                        Instant.ofEpochMilli(it)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                            .format(DateTimeFormatter.ISO_LOCAL_DATE)
+                    } ?: "Not set"
+                }"
+            )
+
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -205,7 +240,7 @@ fun ExpenseForm(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Add Expense")
+                    Text("Edit Expense")
                 }
             }
 

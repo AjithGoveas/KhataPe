@@ -26,20 +26,34 @@ interface TransactionDao {
     @Query(
         """
         UPDATE transactions 
-        SET amount = :amount, 
-            direction = :direction, 
-            description = :description, 
-            timestamp = :timestamp 
-        WHERE id = :id
-        """
+        SET amount = :amount, direction = :direction, description = :description, timestamp = :timestamp 
+        WHERE id = :transactionId
+    """
     )
-    suspend fun updateTransaction(
-        id: Long,
+    suspend fun updateTransactions(
+        transactionId: Long,
         amount: Double,
         direction: TransactionDirection,
         description: String,
         timestamp: Long
     ): Int
+
+    @Query(
+        """
+        UPDATE transactions 
+        SET amount = :amount, direction = :direction, description = :description, dueDate = :dueDate, timestamp = :timestamp 
+        WHERE id = :transactionId
+    """
+    )
+    suspend fun updateTransactionsWithDueDate(
+        transactionId: Long,
+        amount: Double,
+        direction: TransactionDirection,
+        description: String,
+        dueDate: Long,
+        timestamp: Long
+    ): Int
+
 
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteById(id: Long): Int

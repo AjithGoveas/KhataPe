@@ -10,7 +10,6 @@ import dev.ajithgoveas.khatape.domain.model.TransactionDirection
 import dev.ajithgoveas.khatape.domain.usecase.GetFriendByIdUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetTransactionByIdUseCase
 import dev.ajithgoveas.khatape.domain.usecase.UpdateTransactionUseCase
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,6 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class ExpenseUiState(
     val friend: Friend? = null,
@@ -30,6 +30,7 @@ data class ExpenseUiState(
     val amountError: String? = null,
     val direction: TransactionDirection = TransactionDirection.DEBIT,
     val description: String = "",
+    val dueDate: Long? = null,
     val timestamp: Long = System.currentTimeMillis(),
     val isLoading: Boolean = false,
     val isSaving: Boolean = false
@@ -40,6 +41,7 @@ sealed class ExpenseEvent {
     data class DirectionChanged(val direction: TransactionDirection) : ExpenseEvent()
     data class DescriptionChanged(val description: String) : ExpenseEvent()
     data class TimestampChanged(val timestamp: Long) : ExpenseEvent()
+    data class DueDateChanged(val dueDate: Long?) : ExpenseEvent()
     object SaveClicked : ExpenseEvent()
     object CancelClicked : ExpenseEvent()
 }
@@ -49,6 +51,7 @@ data class FormState(
     val amountError: String? = null,
     val direction: TransactionDirection = TransactionDirection.DEBIT,
     val description: String = "",
+    val dueDate: Long? = null,
     val timestamp: Long = System.currentTimeMillis(),
     val isSaving: Boolean = false
 )
@@ -78,6 +81,7 @@ class EditExpenseViewModel @Inject constructor(
                             amount = transaction.amount.toString(),
                             direction = transaction.direction,
                             description = transaction.description,
+                            dueDate = transaction.dueDate,
                             timestamp = transaction.timestamp,
                             isLoading = false
                         )
@@ -105,6 +109,7 @@ class EditExpenseViewModel @Inject constructor(
                 amount = state.amount,
                 direction = state.direction,
                 description = state.description,
+                dueDate = state.dueDate,
                 timestamp = state.timestamp
             )
         }
@@ -125,6 +130,7 @@ class EditExpenseViewModel @Inject constructor(
             is ExpenseEvent.DirectionChanged -> _formState.update { it.copy(direction = event.direction) }
             is ExpenseEvent.DescriptionChanged -> _formState.update { it.copy(description = event.description) }
             is ExpenseEvent.TimestampChanged -> _formState.update { it.copy(timestamp = event.timestamp) }
+            is ExpenseEvent.DueDateChanged -> _formState.update { it.copy(dueDate = event.dueDate) }
             ExpenseEvent.SaveClicked -> handleSave()
             ExpenseEvent.CancelClicked -> handleCancel()
         }
@@ -143,7 +149,14 @@ class EditExpenseViewModel @Inject constructor(
         _formState.update { it.copy(isSaving = true) }
 
         viewModelScope.launch {
-            updateTransaction(id, amount, state.direction, state.description, state.timestamp)
+            updateTransaction(
+                id,
+                amount,
+                state.direction,
+                state.description,
+                state.dueDate,
+                state.timestamp
+            )
             _formState.update { it.copy(isSaving = false) }
         }
     }

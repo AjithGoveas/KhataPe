@@ -13,6 +13,7 @@ class AddTransactionUseCase @Inject constructor(
         amount: Double,
         direction: TransactionDirection,
         description: String,
+        dueDate: Long?,
         timeStamp: Long
     ): Long { // Corrected the return type to Long
         val transaction = TransactionEntity(
@@ -20,6 +21,7 @@ class AddTransactionUseCase @Inject constructor(
             amount = amount,
             direction = direction,
             description = description,
+            dueDate = dueDate,
             timestamp = timeStamp
         )
         return transactionRepository.addTransaction(transaction)

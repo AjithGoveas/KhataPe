@@ -224,7 +224,7 @@ fun FriendDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Transactions with ${uiState.friend!!.name}",
+                            text = uiState.friend!!.name,
                             style = MaterialTheme.typography.headlineMedium
                         )
 

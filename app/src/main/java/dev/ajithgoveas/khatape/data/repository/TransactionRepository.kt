@@ -3,9 +3,9 @@ package dev.ajithgoveas.khatape.data.repository
 import dev.ajithgoveas.khatape.data.local.dao.TransactionDao
 import dev.ajithgoveas.khatape.data.local.entity.TransactionEntity
 import dev.ajithgoveas.khatape.domain.model.TransactionDirection
-import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
 class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao
@@ -31,8 +31,28 @@ class TransactionRepository @Inject constructor(
         amount: Double,
         direction: TransactionDirection,
         description: String,
+        dueDate: Long?,
         timestamp: Long
-    ): Int = transactionDao.updateTransaction(transactionId, amount, direction, description, timestamp)
+    ): Int {
+        return if (dueDate != null) {
+            transactionDao.updateTransactionsWithDueDate(
+                transactionId,
+                amount,
+                direction,
+                description,
+                dueDate,
+                timestamp
+            )
+        } else {
+            transactionDao.updateTransactions(
+                transactionId,
+                amount,
+                direction,
+                description,
+                timestamp
+            )
+        }
+    }
 
     // DELETE: Deletes a transaction by its ID.
     suspend fun deleteTransaction(transactionId: Long): Int =

@@ -171,6 +171,14 @@ fun ExpenseDetailsContent(
             .format(DateTimeFormatter.ISO_LOCAL_DATE)
         InfoRow("Date", localDate)
 
+        val dueDate = transaction.dueDate?.let {
+            Instant.ofEpochMilli(it)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate()
+                .format(DateTimeFormatter.ISO_LOCAL_DATE)
+        } ?: "N/A"
+        InfoRow("Due Date", dueDate)
+
         // Action buttons
         Spacer(modifier = Modifier.height(32.dp))
         Row(

@@ -26,5 +26,6 @@ data class TransactionEntity(
     val direction: TransactionDirection,
     val description: String,
     val isSettled: Boolean = false,
+    val dueDate: Long? = null,
     val timestamp: Long = System.currentTimeMillis()
 )

@@ -7,6 +7,7 @@ data class Transaction(
     val direction: TransactionDirection,
     val description: String,
     val isSettled: Boolean,
+    val dueDate: Long?,
     val timestamp: Long
 )
 
