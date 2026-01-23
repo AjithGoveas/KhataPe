@@ -15,6 +15,8 @@ hilt = "2.58"
 hilt-navigation-compose = "1.3.0"
 google-fonts = "1.10.1"
 work-runtime-ktx = "2.11.0"
+hiltCommon = "1.3.0"
+hiltWork = "1.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,9 +41,12 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+#hilt-work = { group = "com.google.dagger", name = "hilt-work", version.ref = "hilt"}
 hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt-navigation-compose" }
 androidx-ui-text-google = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "google-fonts" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work-runtime-ktx" }
+androidx-hilt-common = { group = "androidx.hilt", name = "hilt-common", version.ref = "hiltCommon" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltWork" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -49,15 +49,133 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun AddExpenseFAB(onClick: () -> Unit) {
-    ExtendedFloatingActionButton(
-        onClick = onClick,
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary
-    ) {
-        Icon(Icons.Default.Add, contentDescription = "Add Expense")
-        Text("Expense")
+fun FriendDetailScreen(
+    modifier: Modifier = Modifier,
+    friendId: Long,
+    navController: NavController,
+    viewModel: FriendDetailViewModel = hiltViewModel()
+) {
+    LaunchedEffect(friendId) {
+        viewModel.setFriendId(friendId)
     }
+
+    val uiState by viewModel.uiState.collectAsState()
+    val snackBarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val layoutDirection = LocalLayoutDirection.current
+
+    // Handle side effects
+    LaunchedEffect(Unit) {
+        viewModel.sideEffects.collect { effect ->
+            when (effect) {
+                FriendDetailSideEffect.NavigateBack -> navController.popBackStack()
+                is FriendDetailSideEffect.ShowError -> {
+                    coroutineScope.launch {
+                        snackBarHostState.showSnackbar(
+                            message = effect.message,
+                            withDismissAction = true
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        floatingActionButton = {
+            AddExpenseFAB {
+                navController.navigate(Screen.FriendsScreens.AddExpense.createRoute(friendId))
+            }
+        },
+        snackbarHost = { SnackbarHost(snackBarHostState) },
+        modifier = modifier
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    start = innerPadding.calculateStartPadding(layoutDirection),
+                    end = innerPadding.calculateEndPadding(layoutDirection),
+                    bottom = innerPadding.calculateBottomPadding()
+                )
+                .padding(horizontal = 16.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            when {
+                uiState.isLoading -> LoadingState()
+                uiState.friend == null -> ErrorState()
+                else -> {
+                    FriendHeader(
+                        name = uiState.friend!!.name,
+                        isDeleting = uiState.isDeleting,
+                        onDelete = { viewModel.onEvent(FriendDetailEvent.DeleteClicked) }
+                    )
+
+                    TransactionList(
+                        transactions = uiState.transactions,
+                        navController = navController
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FriendHeader(
+    name: String,
+    isDeleting: Boolean,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = "Friend details & transactions",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        IconButton(
+            onClick = onDelete,
+            enabled = !isDeleting,
+            colors = IconButtonDefaults.iconButtonColors(
+                contentColor = MaterialTheme.colorScheme.error,
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            )
+        ) {
+            Icon(Icons.Outlined.Delete, contentDescription = "Delete Friend")
+        }
+    }
+}
+
+@Composable
+private fun LoadingState() {
+    Text(
+        text = "Loading friend details...",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+@Composable
+private fun ErrorState() {
+    Text(
+        text = "Friend not found.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.error
+    )
 }
 
 @Composable
@@ -75,12 +193,11 @@ fun TransactionCard(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable {
-                // Navigate to the "View Expense" screen with the transaction ID
                 navController.navigate(Screen.FriendsScreens.ViewExpense.createRoute(txn.id))
             },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
             modifier = Modifier
@@ -89,7 +206,7 @@ fun TransactionCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = txn.description,
                     style = MaterialTheme.typography.titleMedium,
@@ -114,7 +231,7 @@ fun TransactionCard(
                     contentDescription = txn.direction.name,
                     tint = if (txn.direction == TransactionDirection.DEBIT)
                         MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -133,119 +250,22 @@ fun TransactionList(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     } else {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(transactions.size) { index ->
-                val txn = transactions[index]
-                TransactionCard(txn = txn, navController = navController)
+                TransactionCard(txn = transactions[index], navController = navController)
             }
         }
     }
 }
 
 @Composable
-fun FriendDetailScreen(
-    modifier: Modifier = Modifier,
-    friendId: Long,
-    navController: NavController,
-    viewModel: FriendDetailViewModel = hiltViewModel()
-) {
-    LaunchedEffect(friendId) {
-        viewModel.setFriendId(friendId)
-    }
-
-    val uiState by viewModel.uiState.collectAsState()
-
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-
-    val layoutDirection = LocalLayoutDirection.current
-
-    // Handle side effects like navigation or error
-    LaunchedEffect(Unit) {
-        viewModel.sideEffects.collect { effect ->
-            when (effect) {
-                FriendDetailSideEffect.NavigateBack -> navController.popBackStack()
-                is FriendDetailSideEffect.ShowError -> {
-                    // TODO: Show snackbar or toast
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(
-                            message = effect.message,
-                            withDismissAction = true
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    Scaffold(
-        floatingActionButton = {
-            AddExpenseFAB {
-                navController.navigate(
-                    Screen.FriendsScreens.AddExpense.createRoute(friendId)
-                )
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        modifier = modifier
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    start = innerPadding.calculateStartPadding(layoutDirection),
-                    end = innerPadding.calculateEndPadding(layoutDirection),
-                    bottom = innerPadding.calculateBottomPadding()
-                )
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            when {
-                uiState.isLoading -> {
-                    Text(
-                        text = "Loading friend details...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                uiState.friend == null -> {
-                    Text(
-                        text = "Friend not found.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-
-                else -> {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = uiState.friend!!.name,
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-
-                        IconButton(
-                            onClick = { viewModel.onEvent(FriendDetailEvent.DeleteClicked) },
-                            enabled = !uiState.isDeleting,
-                            colors = IconButtonDefaults.iconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error,
-                                containerColor = MaterialTheme.colorScheme.errorContainer
-                            )
-                        ) {
-                            Icon(Icons.Outlined.Delete, contentDescription = "Delete Friend")
-                        }
-                    }
-
-                    TransactionList(
-                        transactions = uiState.transactions,
-                        navController = navController
-                    )
-                }
-            }
-        }
+fun AddExpenseFAB(onClick: () -> Unit) {
+    ExtendedFloatingActionButton(
+        onClick = onClick,
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary
+    ) {
+        Icon(Icons.Default.Add, contentDescription = "Add Expense")
+        Text("Add Expense")
     }
 }

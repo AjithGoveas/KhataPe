@@ -47,6 +47,8 @@ android {
         }
     }
     buildFeatures {
+        buildConfig = true
+        resValues = true
         compose = true
     }
 }
@@ -69,13 +71,16 @@ dependencies {
 
     // Room
     implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
     // Hilt
+    implementation(libs.androidx.hilt.common)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
+//    implementation(libs.hilt.work)
 
     implementation(libs.androidx.ui.text.google)
 

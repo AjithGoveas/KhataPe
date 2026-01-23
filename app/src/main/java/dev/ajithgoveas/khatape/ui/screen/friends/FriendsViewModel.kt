@@ -5,16 +5,22 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.ajithgoveas.khatape.domain.model.FriendSummary
 import dev.ajithgoveas.khatape.domain.usecase.GetFriendSummariesUseCase
-import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
 @HiltViewModel
 class FriendsViewModel @Inject constructor(
     getFriendSummaries: GetFriendSummariesUseCase
 ) : ViewModel() {
 
+    // Keep the upstream flow hot while ViewModel is alive
     val friends: StateFlow<List<FriendSummary>> = getFriendSummaries()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly, // start immediately, no restart overhead
+            initialValue = emptyList()
+        )
 }
+

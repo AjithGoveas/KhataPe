@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -55,19 +57,15 @@ fun ViewExpenseScreen(
     }
 
     val uiState by viewModel.uiState.collectAsState()
-
     val snackBarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val layoutDirection = LocalLayoutDirection.current
 
-    // Collect side effects from the ViewModel
+    // Collect side effects
     LaunchedEffect(Unit) {
         viewModel.sideEffects.collect { effect ->
             when (effect) {
-                is ViewExpenseSideEffect.NavigateBack -> {
-                    navController.popBackStack()
-                }
-
+                is ViewExpenseSideEffect.NavigateBack -> navController.popBackStack()
                 is ViewExpenseSideEffect.ShowError -> {
                     coroutineScope.launch {
                         snackBarHostState.showSnackbar(
@@ -84,7 +82,6 @@ fun ViewExpenseScreen(
         }
     }
 
-    // Main UI
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         modifier = modifier
@@ -99,13 +96,15 @@ fun ViewExpenseScreen(
             .padding(horizontal = 16.dp, vertical = 24.dp)
 
         when {
-            uiState.isLoading -> {
-                LoadingState(modifier = contentModifier, loadingText = "Loading expense...")
-            }
+            uiState.isLoading -> LoadingState(
+                modifier = contentModifier,
+                loadingText = "Loading expense..."
+            )
 
-            uiState.isError -> {
-                ErrorState(modifier = contentModifier, errorText = "Error loading expense.")
-            }
+            uiState.isError -> ErrorState(
+                modifier = contentModifier,
+                errorText = "Error loading expense."
+            )
 
             uiState.transaction != null && uiState.friend != null -> {
                 ExpenseDetailsContent(
@@ -120,7 +119,7 @@ fun ViewExpenseScreen(
 }
 
 @Composable
-fun ExpenseDetailsContent(
+private fun ExpenseDetailsContent(
     uiState: ViewExpenseUiState,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
@@ -131,51 +130,61 @@ fun ExpenseDetailsContent(
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        Text("Expense Details", style = MaterialTheme.typography.headlineSmall)
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = 8.dp),
-            thickness = 2.dp
+        // Header
+        Text(
+            "Expense Details",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.primary
         )
+        HorizontalDivider(thickness = 2.dp)
 
-        // Display friend and amount
+        // Friend info
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             AvatarIcon(name = friend.name)
-            Text(
-                text = friend.name,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Column {
+                Text(
+                    text = friend.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Friend",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
 
-        // Display transaction details
+        // Amount
         Text(
             text = "₹${transaction.amount}",
             style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.secondary
         )
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 2.dp)
+        HorizontalDivider(thickness = 1.dp)
 
-        // Description, Date, etc.
+        // Transaction details
         InfoRow("Description", transaction.description.ifEmpty { "N/A" })
         InfoRow("Direction", transaction.direction.name)
 
         val localDate = Instant.ofEpochMilli(transaction.timestamp)
             .atZone(ZoneId.systemDefault())
             .toLocalDate()
-            .format(DateTimeFormatter.ISO_LOCAL_DATE)
+            .format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
         InfoRow("Date", localDate)
 
         val dueDate = transaction.dueDate?.let {
             Instant.ofEpochMilli(it)
                 .atZone(ZoneId.systemDefault())
                 .toLocalDate()
-                .format(DateTimeFormatter.ISO_LOCAL_DATE)
+                .format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
         } ?: "N/A"
         InfoRow("Due Date", dueDate)
 
@@ -199,7 +208,11 @@ fun ExpenseDetailsContent(
                 modifier = Modifier.weight(1f)
             ) {
                 if (uiState.isDeleting) {
-                    LoadingState()
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onError,
+                        strokeWidth = 2.dp
+                    )
                 } else {
                     Text("Delete")
                 }
@@ -209,12 +222,21 @@ fun ExpenseDetailsContent(
 }
 
 @Composable
-fun InfoRow(label: String, value: String) {
+private fun InfoRow(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = label, style = MaterialTheme.typography.bodyLarge)
-        Text(text = value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }

@@ -24,7 +24,9 @@ import dev.ajithgoveas.khatape.ui.screen.viewExpense.ViewExpenseScreen
 import dev.ajithgoveas.khatape.ui.theme.KhataPeTheme
 
 @Composable
-fun KhataPe(navController: NavHostController = rememberNavController()) {
+fun KhataPe(
+    navController: NavHostController = rememberNavController()
+) {
     KhataPeTheme {
         Scaffold(
             bottomBar = { BottomNavigationBar(navController) }

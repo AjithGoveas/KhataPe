@@ -28,6 +28,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -85,7 +87,7 @@ fun FriendContextCard(friend: Friend, friendSummary: FriendSummary) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpenseForm(
+private fun AddExpenseForm(
     uiState: AddExpenseUiState,
     formState: FormState,
     onEvent: (AddExpenseEvent) -> Unit,
@@ -109,33 +111,30 @@ fun ExpenseForm(
         DatePickerDialogModal(
             initialDateMillis = formState.dueDate ?: System.currentTimeMillis(),
             onDateSelected = { millis ->
-                onEvent(AddExpenseEvent.DueDateChanged(millis ?: formState.dueDate))
+                if (millis != null && millis >= formState.timestamp) {
+                    onEvent(AddExpenseEvent.DueDateChanged(millis))
+                } else {
+                    onEvent(AddExpenseEvent.Error("Due date cannot be before transaction date"))
+                }
             },
             onDismiss = { showDateDue = false }
         )
     }
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
+        // Friend section
         uiState.friend?.let { friend ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                AvatarIcon(name = friend.name)
-                Text(
-                    text = friend.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
+            FriendHeader(friend.name)
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 2.dp)
-        Text("Expense Details", style = MaterialTheme.typography.headlineSmall)
+        SectionTitle("Expense Details")
 
+        // Amount field
         OutlinedTextField(
             value = formState.amount,
             onValueChange = { onEvent(AddExpenseEvent.AmountChanged(it)) },
@@ -165,6 +164,7 @@ fun ExpenseForm(
             onDirectionChange = { onEvent(AddExpenseEvent.DirectionChanged(it)) }
         )
 
+        // Description
         OutlinedTextField(
             value = formState.description,
             onValueChange = { onEvent(AddExpenseEvent.DescriptionChanged(it)) },
@@ -174,53 +174,21 @@ fun ExpenseForm(
             modifier = Modifier.fillMaxWidth()
         )
 
-        OutlinedButton(
-            onClick = { showDateToday = true },
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-            Icon(
-                Icons.Filled.CalendarToday,
-                contentDescription = "Select Date",
-                modifier = Modifier.size(ButtonDefaults.IconSize)
-            )
-            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-            Text(
-                "Date: ${
-                    Instant.ofEpochMilli(formState.timestamp)
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate()
-                        .format(DateTimeFormatter.ISO_LOCAL_DATE)
-                }"
-            )
-        }
+        // Date pickers
+        DateButton(
+            label = "Transaction Date",
+            dateMillis = formState.timestamp,
+            onClick = { showDateToday = true }
+        )
 
-        OutlinedButton(
-            onClick = { showDateDue = true },
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-            Icon(
-                Icons.Filled.CalendarToday,
-                contentDescription = "Select Due Date",
-                modifier = Modifier.size(ButtonDefaults.IconSize)
-            )
-            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-            Text(
-                "Due Date: ${
-                    formState.dueDate?.let {
-                        Instant.ofEpochMilli(it)
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate()
-                            .format(DateTimeFormatter.ISO_LOCAL_DATE)
-                    } ?: "Not set"
-                }"
-            )
+        DateButton(
+            label = "Due Date",
+            dateMillis = formState.dueDate,
+            onClick = { showDateDue = true }
+        )
 
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
+        // Action buttons
+        Spacer(modifier = Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -234,7 +202,7 @@ fun ExpenseForm(
             ) {
                 if (formState.isSaving) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(20.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp
                     )
@@ -254,9 +222,69 @@ fun ExpenseForm(
     }
 }
 
+@Composable
+private fun FriendHeader(name: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        AvatarIcon(name = name)
+        Column {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Friend",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(title: String) {
+    Column {
+        HorizontalDivider(thickness = 2.dp, modifier = Modifier.padding(vertical = 8.dp))
+        Text(title, style = MaterialTheme.typography.headlineSmall)
+    }
+}
+
+@Composable
+private fun DateButton(
+    label: String,
+    dateMillis: Long?,
+    onClick: () -> Unit
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Icon(
+            Icons.Filled.CalendarToday,
+            contentDescription = label,
+            modifier = Modifier.size(ButtonDefaults.IconSize)
+        )
+        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+        Text(
+            "$label: ${
+                dateMillis?.let {
+                    Instant.ofEpochMilli(it)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                        .format(DateTimeFormatter.ISO_LOCAL_DATE)
+                } ?: "Not set"
+            }"
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DirectionToggle(
+private fun DirectionToggle(
     selectedDirection: TransactionDirection,
     onDirectionChange: (TransactionDirection) -> Unit
 ) {
@@ -270,12 +298,12 @@ fun DirectionToggle(
             FilterChip(
                 selected = selectedDirection == TransactionDirection.CREDIT,
                 onClick = { onDirectionChange(TransactionDirection.CREDIT) },
-                label = { Text("You Paid") } // CREDIT → Friends owe you
+                label = { Text("You Paid") }
             )
             FilterChip(
                 selected = selectedDirection == TransactionDirection.DEBIT,
                 onClick = { onDirectionChange(TransactionDirection.DEBIT) },
-                label = { Text("They Paid") } // DEBIT → You owe friends
+                label = { Text("They Paid") }
             )
         }
     }
@@ -288,15 +316,37 @@ fun AddExpenseScreen(
     navController: NavController,
     viewModel: AddExpenseViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    val formState by viewModel.formState.collectAsState()
+    val layoutDirection = LocalLayoutDirection.current
+    val snackBarHost = remember { SnackbarHostState() }
+
     LaunchedEffect(friendId) {
         viewModel.setFriendId(friendId)
     }
 
-    val uiState by viewModel.uiState.collectAsState()
-    val formState by viewModel.formState.collectAsState()
-    val layoutDirection = LocalLayoutDirection.current
+    LaunchedEffect(Unit) {
+        viewModel.sideEffects.collect { sideEffect ->
+            when (sideEffect) {
+                is AddExpenseSideEffect.ShowError -> {
+                    snackBarHost.showSnackbar(sideEffect.message)
+                }
 
-    Scaffold(modifier = modifier) { innerPadding ->
+                is AddExpenseSideEffect.Cancelled -> {
+                    snackBarHost.showSnackbar("Expense addition cancelled")
+                }
+
+                is AddExpenseSideEffect.SaveSuccess -> {
+                    snackBarHost.showSnackbar("Expense added successfully")
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        modifier = modifier,
+        snackbarHost = { SnackbarHost(snackBarHost) }
+    ) { innerPadding ->
         val contentModifier = Modifier
             .fillMaxSize()
             .padding(
@@ -304,7 +354,7 @@ fun AddExpenseScreen(
                 end = innerPadding.calculateEndPadding(layoutDirection),
                 bottom = innerPadding.calculateBottomPadding()
             )
-            .padding(horizontal = 16.dp, vertical = 24.dp)
+            .padding(horizontal = 8.dp, vertical = 8.dp)
 
         when {
             uiState.isLoading && uiState.friend == null -> LoadingState(
@@ -333,7 +383,7 @@ fun AddExpenseScreen(
 }
 
 @Composable
-fun ExpenseContent(
+private fun ExpenseContent(
     uiState: AddExpenseUiState,
     formState: FormState,
     modifier: Modifier,
@@ -343,10 +393,13 @@ fun ExpenseContent(
 ) {
     LazyColumn(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         item {
-            ExpenseForm(
+            ScreenHeader("➕ Add Expense")
+        }
+        item {
+            AddExpenseForm(
                 uiState = uiState,
                 formState = formState,
                 onEvent = onEvent,
@@ -355,12 +408,33 @@ fun ExpenseContent(
             )
         }
         item {
-            Text(
-                text = "Transactions are auto-marked as settled when balances reach zero.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp)
+            InfoNote(
+                text = "Transactions are auto-marked as settled when balances reach zero."
             )
         }
     }
+}
+
+@Composable
+private fun ScreenHeader(title: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+        HorizontalDivider(thickness = 2.dp, modifier = Modifier.padding(vertical = 4.dp))
+    }
+}
+
+@Composable
+private fun InfoNote(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+    )
 }

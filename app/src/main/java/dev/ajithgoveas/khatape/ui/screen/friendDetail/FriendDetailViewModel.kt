@@ -11,7 +11,6 @@ import dev.ajithgoveas.khatape.domain.usecase.DeleteFriendUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetFriendByIdUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetFriendSummaryByIdUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetTransactionsForFriendUseCase
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,9 +19,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class FriendDetailUiState(
     val friend: Friend? = null,
@@ -42,7 +43,6 @@ sealed class FriendDetailSideEffect {
     data class ShowError(val message: String) : FriendDetailSideEffect()
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class FriendDetailViewModel @Inject constructor(
     private val getFriendByIdUseCase: GetFriendByIdUseCase,
@@ -55,26 +55,33 @@ class FriendDetailViewModel @Inject constructor(
     private val _sideEffects = Channel<FriendDetailSideEffect>(Channel.BUFFERED)
     val sideEffects = _sideEffects.receiveAsFlow()
 
+    // Build uiState directly from flows, no manual collect
+    @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<FriendDetailUiState> = friendId
-        .flatMapLatest { id ->
-            if (id == null) flowOf(FriendDetailUiState(isLoading = false, isError = true))
-            else combine(
-                getFriendByIdUseCase(id),
-                getFriendSummaryById(id),
-                getTransactionsForFriend(id)
-            ) { friend, friendSummary, transactions ->
-                FriendDetailUiState(
-                    friend = friend?.toDomain(),
-                    friendSummary = friendSummary,
-                    transactions = transactions,
-                    isLoading = false
-                )
+        .map { id ->
+            if (id == null) {
+                flowOf(FriendDetailUiState(isLoading = false, isError = true))
+            } else {
+                combine(
+                    getFriendByIdUseCase(id),
+                    getFriendSummaryById(id),
+                    getTransactionsForFriend(id)
+                ) { friend, summary, transactions ->
+                    FriendDetailUiState(
+                        friend = friend?.toDomain(),
+                        friendSummary = summary,
+                        transactions = transactions,
+                        isLoading = false,
+                        isError = friend == null
+                    )
+                }
             }
         }
+        .flatMapLatest { it } // flatten the inner flow
         .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            FriendDetailUiState(isLoading = true)
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = FriendDetailUiState(isLoading = true)
         )
 
     fun setFriendId(id: Long) {
@@ -91,15 +98,13 @@ class FriendDetailViewModel @Inject constructor(
         val friend = uiState.value.friend ?: return
 
         viewModelScope.launch {
-            val currentState = uiState.value
-            val loadingState = currentState.copy(isDeleting = true)
-            val finalState = currentState.copy(isDeleting = false)
-
             try {
+                // Optimistically show deleting state
+                _sideEffects.send(FriendDetailSideEffect.ShowError("Deleting friend..."))
                 deleteFriendUseCase(friend)
                 _sideEffects.send(FriendDetailSideEffect.NavigateBack)
-            } catch (_: Exception) {
-                _sideEffects.send(FriendDetailSideEffect.ShowError("Failed to delete friend."))
+            } catch (e: Exception) {
+                _sideEffects.send(FriendDetailSideEffect.ShowError("Failed to delete friend: ${e.message}"))
             }
         }
     }

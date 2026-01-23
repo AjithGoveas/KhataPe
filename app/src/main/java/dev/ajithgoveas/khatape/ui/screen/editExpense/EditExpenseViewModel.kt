@@ -11,9 +11,11 @@ import dev.ajithgoveas.khatape.domain.usecase.GetFriendByIdUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetTransactionByIdUseCase
 import dev.ajithgoveas.khatape.domain.usecase.UpdateTransactionUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -33,7 +35,8 @@ data class ExpenseUiState(
     val dueDate: Long? = null,
     val timestamp: Long = System.currentTimeMillis(),
     val isLoading: Boolean = false,
-    val isSaving: Boolean = false
+    val isSaving: Boolean = false,
+    val isError: Boolean
 )
 
 sealed class ExpenseEvent {
@@ -42,6 +45,7 @@ sealed class ExpenseEvent {
     data class DescriptionChanged(val description: String) : ExpenseEvent()
     data class TimestampChanged(val timestamp: Long) : ExpenseEvent()
     data class DueDateChanged(val dueDate: Long?) : ExpenseEvent()
+    data class Error(val message: String) : ExpenseEvent()
     object SaveClicked : ExpenseEvent()
     object CancelClicked : ExpenseEvent()
 }
@@ -68,35 +72,43 @@ class EditExpenseViewModel @Inject constructor(
     private val transactionId = MutableStateFlow<Long?>(null)
 
     val uiState: StateFlow<ExpenseUiState> = transactionId
-        .flatMapLatest { id ->
-            if (id == null) flowOf(ExpenseUiState(isLoading = false))
-            else getTransactionById(id).flatMapLatest { transaction ->
-                if (transaction == null) {
-                    flowOf(ExpenseUiState(isLoading = false))
-                } else {
-                    getFriendById(transaction.friendId).map { friend ->
-                        ExpenseUiState(
-                            friend = friend?.toDomain(),
-                            transactionId = transaction.id,
-                            amount = transaction.amount.toString(),
-                            direction = transaction.direction,
-                            description = transaction.description,
-                            dueDate = transaction.dueDate,
-                            timestamp = transaction.timestamp,
-                            isLoading = false
-                        )
+        .map { id ->
+            if (id == null) {
+                flowOf(ExpenseUiState(isLoading = false, isError = true))
+            } else {
+                getTransactionById(id).flatMapLatest { transaction ->
+                    if (transaction == null) {
+                        flowOf(ExpenseUiState(isLoading = false, isError = true))
+                    } else {
+                        getFriendById(transaction.friendId).map { friend ->
+                            ExpenseUiState(
+                                friend = friend?.toDomain(),
+                                transactionId = transaction.id,
+                                amount = transaction.amount.toString(),
+                                direction = transaction.direction,
+                                description = transaction.description,
+                                dueDate = transaction.dueDate,
+                                timestamp = transaction.timestamp,
+                                isLoading = false,
+                                isError = false
+                            )
+                        }
                     }
                 }
             }
         }
+        .flatMapLatest { it }
         .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            ExpenseUiState(isLoading = true)
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly, // keep hot, avoid restarts
+            initialValue = ExpenseUiState(isLoading = true, isError = false)
         )
 
     private val _formState = MutableStateFlow(FormState())
     val formState: StateFlow<FormState> = _formState
+
+    private val _sideEffects = MutableSharedFlow<EditExpenseSideEffect>()
+    val sideEffects = _sideEffects.asSharedFlow()
 
     fun setTransactionId(id: Long) {
         transactionId.value = id
@@ -117,20 +129,22 @@ class EditExpenseViewModel @Inject constructor(
 
     fun onEvent(event: ExpenseEvent) {
         when (event) {
-            is ExpenseEvent.AmountChanged -> {
-                val isValid = event.amount.toDoubleOrNull() != null || event.amount.isEmpty()
-                _formState.update {
-                    it.copy(
-                        amount = event.amount,
-                        amountError = if (!isValid && event.amount.isNotEmpty()) "Invalid amount" else null
-                    )
-                }
-            }
+            is ExpenseEvent.AmountChanged ->
+                _formState.update { it.copy(amount = event.amount, amountError = null) }
 
-            is ExpenseEvent.DirectionChanged -> _formState.update { it.copy(direction = event.direction) }
-            is ExpenseEvent.DescriptionChanged -> _formState.update { it.copy(description = event.description) }
-            is ExpenseEvent.TimestampChanged -> _formState.update { it.copy(timestamp = event.timestamp) }
-            is ExpenseEvent.DueDateChanged -> _formState.update { it.copy(dueDate = event.dueDate) }
+            is ExpenseEvent.DirectionChanged ->
+                _formState.update { it.copy(direction = event.direction) }
+
+            is ExpenseEvent.DescriptionChanged ->
+                _formState.update { it.copy(description = event.description) }
+
+            is ExpenseEvent.TimestampChanged ->
+                _formState.update { it.copy(timestamp = event.timestamp) }
+
+            is ExpenseEvent.DueDateChanged ->
+                _formState.update { it.copy(dueDate = event.dueDate) }
+
+            is ExpenseEvent.Error -> handleError(event.message)
             ExpenseEvent.SaveClicked -> handleSave()
             ExpenseEvent.CancelClicked -> handleCancel()
         }
@@ -149,19 +163,40 @@ class EditExpenseViewModel @Inject constructor(
         _formState.update { it.copy(isSaving = true) }
 
         viewModelScope.launch {
-            updateTransaction(
-                id,
-                amount,
-                state.direction,
-                state.description,
-                state.dueDate,
-                state.timestamp
-            )
-            _formState.update { it.copy(isSaving = false) }
+            try {
+                updateTransaction(
+                    id,
+                    amount,
+                    state.direction,
+                    state.description,
+                    state.dueDate,
+                    state.timestamp
+                )
+                _formState.update { it.copy(isSaving = false) }
+                _sideEffects.emit(EditExpenseSideEffect.SaveSuccess(id))
+            } catch (e: Exception) {
+                _sideEffects.emit(EditExpenseSideEffect.ShowError("Failed to update expense: ${e.message}"))
+            } finally {
+                _formState.update { it.copy(isSaving = false) }
+            }
         }
     }
 
     private fun handleCancel() {
-        // Optional: emit cancel effect
+        viewModelScope.launch {
+            _sideEffects.emit(EditExpenseSideEffect.Cancelled)
+        }
     }
+
+    private fun handleError(message: String) {
+        viewModelScope.launch {
+            _sideEffects.emit(EditExpenseSideEffect.ShowError(message))
+        }
+    }
+}
+
+sealed class EditExpenseSideEffect {
+    data class SaveSuccess(val transactionId: Long) : EditExpenseSideEffect()
+    data class ShowError(val message: String) : EditExpenseSideEffect()
+    object Cancelled : EditExpenseSideEffect()
 }

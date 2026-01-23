@@ -1,13 +1,12 @@
 package dev.ajithgoveas.khatape
 
-import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class KhataPeApplication : Application() {
+class KhataPeApplication : android.app.Application() {
     override fun onCreate() {
         super.onCreate()
-        // Initialization code if needed
-        deleteDatabase("khata_pe" ) // For testing purposes only
+        deleteDatabase("khata_pe")
+        deleteDatabase("androidx.work.workdb")
     }
 }

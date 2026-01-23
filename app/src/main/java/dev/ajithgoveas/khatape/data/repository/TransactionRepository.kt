@@ -5,6 +5,7 @@ import dev.ajithgoveas.khatape.data.local.entity.TransactionEntity
 import dev.ajithgoveas.khatape.domain.model.TransactionDirection
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TransactionRepository @Inject constructor(
@@ -21,6 +22,13 @@ class TransactionRepository @Inject constructor(
     // READ: Gets all transactions for a specific friend.
     fun getTransactionsByFriendId(friendId: Long): Flow<List<TransactionEntity>> =
         transactionDao.getByFriend(friendId = friendId)
+
+    // READ: Gets all due transactions for a specific friend.
+    suspend fun getUpcomingTransactionsWithFriend(daysAhead: Int): Flow<List<TransactionEntity>> {
+        val now = System.currentTimeMillis()
+        val end = now + TimeUnit.DAYS.toMillis(daysAhead.toLong())
+        return transactionDao.getTransactionsWithFriendByDueDateRange(now, end)
+    }
 
     // UPDATE: Marks a transaction as settled.
     suspend fun settleTransaction(transactionId: Long): Int =

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import dev.ajithgoveas.khatape.data.local.entity.TransactionEntity
 import dev.ajithgoveas.khatape.domain.model.TransactionDirection
 import kotlinx.coroutines.flow.Flow
@@ -54,6 +55,12 @@ interface TransactionDao {
         timestamp: Long
     ): Int
 
+    @Transaction
+    @Query("SELECT * FROM transactions WHERE dueDate IS NOT NULL AND dueDate BETWEEN :start AND :end")
+    fun getTransactionsWithFriendByDueDateRange(
+        start: Long,
+        end: Long
+    ): Flow<List<TransactionEntity>>
 
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteById(id: Long): Int

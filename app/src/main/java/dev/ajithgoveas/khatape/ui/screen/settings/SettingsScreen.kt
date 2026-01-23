@@ -56,7 +56,7 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.titleMedium
             )
             Text(
-                text = "Developed by Ajith Goveas\nDesign inspiration from Jetpack Compose samples\nSpecial thanks to the open source community",
+                text = "Developed by Ajith Goveas\nDesign inspiration from Jetpack Compose samples",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
             )
@@ -77,7 +77,10 @@ fun SettingsScreen(
                         }
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                )
             ) {
                 Text("Clear All Data")
             }

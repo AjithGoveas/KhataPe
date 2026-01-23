@@ -4,28 +4,34 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.ajithgoveas.khatape.domain.usecase.CreateFriendUseCase
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class CreateFriendViewModel @Inject constructor(
     private val createFriend: CreateFriendUseCase
 ) : ViewModel() {
 
-    // Corrected type from Int? to Long?
-    private val _createdFriendId = MutableStateFlow<Long?>(null)
-    val createdFriendId: StateFlow<Long?> = _createdFriendId
+    // Use a Channel for one-time events (navigation, snackbars, etc.)
+    private val _sideEffects = Channel<CreateFriendSideEffect>(Channel.BUFFERED)
+    val sideEffects = _sideEffects.receiveAsFlow()
 
     fun create(name: String) {
         viewModelScope.launch {
-            val id = createFriend(name)
-            _createdFriendId.value = id
+            try {
+                val id = createFriend(name)
+                _sideEffects.send(CreateFriendSideEffect.FriendCreated(id))
+            } catch (e: Exception) {
+                _sideEffects.send(CreateFriendSideEffect.ShowError("Failed to create friend: ${e.message}"))
+            }
         }
     }
+}
 
-    fun reset() {
-        _createdFriendId.value = null
-    }
+// Side effects for one-time events
+sealed class CreateFriendSideEffect {
+    data class FriendCreated(val id: Long) : CreateFriendSideEffect()
+    data class ShowError(val message: String) : CreateFriendSideEffect()
 }
