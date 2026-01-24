@@ -1,11 +1,20 @@
 package dev.ajithgoveas.khatape
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
+import dev.ajithgoveas.khatape.data.local.ThemePreferenceManager
+import dev.ajithgoveas.khatape.ui.screen.settings.AppTheme
 import dev.ajithgoveas.khatape.ui.theme.KhataPeTheme
+import kotlinx.coroutines.flow.collect
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -20,14 +29,26 @@ class MainActivity : ComponentActivity() {
         }
      */
 
+    @Inject
+    lateinit var themePreferenceManager: ThemePreferenceManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
 //        notificationsAllowed = isNotificationPermissionGranted()
 
+
         setContent {
-            KhataPeTheme {
+            val currentTheme by themePreferenceManager.themeFlow.collectAsStateWithLifecycle()
+            val useDarkTheme = when (currentTheme) {
+                AppTheme.LIGHT -> false
+                AppTheme.DARK -> true
+                else -> isSystemInDarkTheme()
+            }
+            KhataPeTheme(
+                darkTheme = useDarkTheme
+            ) {
                 KhataPe()
             }
         }

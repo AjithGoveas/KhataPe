@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -27,11 +26,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -143,7 +142,8 @@ private fun ExpenseDetailsContent(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+            elevation = CardDefaults.cardElevation(6.dp)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -196,19 +196,22 @@ private fun ExpenseDetailsContent(
         Spacer(modifier = Modifier.weight(1f))
 
         // Delete Action
-        TextButton(
+        OutlinedButton(
             onClick = onDelete,
             enabled = !uiState.isDeleting,
-            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
         ) {
             if (uiState.isDeleting) CircularProgressIndicator(Modifier.size(24.dp))
             else {
-                Icon(Icons.Default.DeleteOutline, contentDescription = null)
+                Icon(
+                    Icons.Default.DeleteOutline,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
                 Spacer(Modifier.width(8.dp))
-                Text("Remove Transaction")
+                Text("Remove Transaction", color = MaterialTheme.colorScheme.error)
             }
         }
     }

@@ -25,12 +25,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -253,11 +253,14 @@ private fun EditExpenseContent(
                     else Text("Update Expense", style = MaterialTheme.typography.titleMedium)
                 }
 
-                TextButton(
+                OutlinedButton(
                     onClick = onCancel,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
                 ) {
-                    Text("Discard Changes", color = MaterialTheme.colorScheme.error)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

@@ -21,12 +21,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -36,7 +34,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -56,7 +53,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import dev.ajithgoveas.khatape.domain.model.TransactionDirection
-import dev.ajithgoveas.khatape.ui.components.AvatarIcon
 import dev.ajithgoveas.khatape.ui.components.ErrorState
 import dev.ajithgoveas.khatape.ui.components.KhataDatePicker
 import dev.ajithgoveas.khatape.ui.components.KhataPeAppTopBar
@@ -245,8 +241,12 @@ private fun ExpenseContent(
                     else Text("Save Transaction", style = MaterialTheme.typography.titleMedium)
                 }
 
-                TextButton(
-                    onClick = onCancel, modifier = Modifier.fillMaxWidth()
+                OutlinedButton(
+                    onClick = onCancel,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
                 ) {
                     Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

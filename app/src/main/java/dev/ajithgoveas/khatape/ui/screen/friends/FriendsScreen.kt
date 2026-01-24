@@ -1,6 +1,7 @@
 package dev.ajithgoveas.khatape.ui.screen.friends
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -235,35 +236,52 @@ private fun FriendsActionMenu(
     onSortChange: (FriendSort) -> Unit,
     onFilterChange: (FriendFilter) -> Unit
 ) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        Text(
-            "Sort By",
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
-        DropdownMenuItem(
-            text = { Text("Name") },
-            onClick = { onSortChange(FriendSort.NAME); onDismiss() },
-            leadingIcon = { Icon(Icons.Default.SortByAlpha, null) })
-        DropdownMenuItem(
-            text = { Text("Highest Debt") },
-            onClick = { onSortChange(FriendSort.HIGHEST_DEBT); onDismiss() },
-            leadingIcon = { Icon(Icons.Default.ArrowDownward, null) })
+    ) {
+        MaterialTheme(
+            shapes = MaterialTheme.shapes.copy(
+                extraSmall = RoundedCornerShape(16.dp)
+            )
+        ) {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = onDismiss,
+                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            ) {
+                Text(
+                    "Sort By",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                DropdownMenuItem(
+                    text = { Text("Name") },
+                    onClick = { onSortChange(FriendSort.NAME); onDismiss() },
+                    leadingIcon = { Icon(Icons.Default.SortByAlpha, null) })
+                DropdownMenuItem(
+                    text = { Text("Highest Debt") },
+                    onClick = { onSortChange(FriendSort.HIGHEST_DEBT); onDismiss() },
+                    leadingIcon = { Icon(Icons.Default.ArrowDownward, null) })
 
-        HorizontalDivider()
+                HorizontalDivider()
 
-        Text(
-            "Filter",
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary
-        )
-        DropdownMenuItem(
-            text = { Text("Show All") },
-            onClick = { onFilterChange(FriendFilter.ALL); onDismiss() })
-        DropdownMenuItem(
-            text = { Text("Pending Only") },
-            onClick = { onFilterChange(FriendFilter.PENDING); onDismiss() })
+                Text(
+                    "Filter",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                DropdownMenuItem(
+                    text = { Text("Show All") },
+                    onClick = { onFilterChange(FriendFilter.ALL); onDismiss() })
+                DropdownMenuItem(
+                    text = { Text("Pending Only") },
+                    onClick = { onFilterChange(FriendFilter.PENDING); onDismiss() })
+            }
+        }
     }
 }
