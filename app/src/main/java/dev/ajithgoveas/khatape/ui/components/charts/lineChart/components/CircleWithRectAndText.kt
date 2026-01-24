@@ -1,0 +1,92 @@
+package dev.ajithgoveas.khatape.ui.components.charts.lineChart.components
+
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.ajithgoveas.khatape.ui.components.charts.lineChart.model.LineParameters
+import dev.ajithgoveas.khatape.ui.components.charts.utils.formatToThousandsMillionsBillions
+
+internal fun DrawScope.circleWithRectAndText(
+    animatedProgress: Animatable<Float, AnimationVector1D>,
+    textMeasure: TextMeasurer,
+    info: Double,
+    stroke: Stroke,
+    line: LineParameters,
+    x: Dp,
+    y: Double,
+) {
+    chartCircle(
+        x = x.toPx(),
+        y = y.toFloat(),
+        color = line.lineColor,
+        animatedProgress = animatedProgress,
+        stroke = stroke
+    )
+    chartRectangleWithText(
+        x = x,
+        y = y,
+        color = line.lineColor,
+        textMeasurer = textMeasure,
+        infoText = info
+    )
+}
+
+private fun DrawScope.chartRectangleWithText(
+    x: Dp,
+    y: Double,
+    color: Color,
+    textMeasurer: TextMeasurer,
+    infoText: Double,
+) {
+    val rectSize = Size(width = 50.dp.toPx(), height = 30.dp.toPx())
+    val rectTopLeft = Offset(
+        x = x.toPx() - (rectSize.width / 1.5.toFloat()),
+        y = y.toFloat() - (rectSize.height * 1.5.toFloat())
+    )
+    val rectBounds = Rect(offset = rectTopLeft, size = rectSize)
+    val text = "Value:${infoText.toFloat().formatToThousandsMillionsBillions()}"
+
+    val textStyle = TextStyle(fontSize = 8.sp, color = Color.Black)
+
+    val textLayoutResult = textMeasurer.measure(
+        text = AnnotatedString(text),
+        style = textStyle
+    )
+
+    val textOffset = Offset(
+        x = (rectTopLeft.x + (rectSize.width / 2)) - (textLayoutResult.size.width / 2),
+        y = rectTopLeft.y + (rectSize.height / 4) + (textLayoutResult.size.height / 2)
+    )
+
+    drawRoundRect(
+        color = color,
+        topLeft = rectBounds.topLeft,
+        size = rectBounds.size,
+        cornerRadius = CornerRadius(16.dp.toPx()),
+        style = Stroke(width = 1.dp.toPx())
+    )
+
+    drawContext.canvas.nativeCanvas.apply {
+        drawText(
+            textMeasurer = textMeasurer,
+            text = text,
+            style = textStyle,
+            topLeft = textOffset
+        )
+    }
+
+}
