@@ -19,7 +19,7 @@ class FriendsViewModel @Inject constructor(
     val friends: StateFlow<List<FriendSummary>> = getFriendSummaries()
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.Eagerly, // start immediately, no restart overhead
+            started = SharingStarted.WhileSubscribed(5000), // start immediately, no restart overhead
             initialValue = emptyList()
         )
 }

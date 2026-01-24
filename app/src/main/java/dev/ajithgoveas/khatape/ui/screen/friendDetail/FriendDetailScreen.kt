@@ -2,15 +2,16 @@ package dev.ajithgoveas.khatape.ui.screen.friendDetail
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -19,35 +20,39 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import dev.ajithgoveas.khatape.domain.model.Transaction
 import dev.ajithgoveas.khatape.domain.model.TransactionDirection
-import dev.ajithgoveas.khatape.ui.navigation.Screen
-import kotlinx.coroutines.launch
+import dev.ajithgoveas.khatape.ui.components.ErrorState
+import dev.ajithgoveas.khatape.ui.components.KhataPeAppTopBar
+import dev.ajithgoveas.khatape.ui.components.LoadingState
+import dev.ajithgoveas.khatape.ui.navigation.Route
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendDetailScreen(
     modifier: Modifier = Modifier,
@@ -55,127 +60,64 @@ fun FriendDetailScreen(
     navController: NavController,
     viewModel: FriendDetailViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(friendId) {
-        viewModel.setFriendId(friendId)
-    }
+    LaunchedEffect(friendId) { viewModel.setFriendId(friendId) }
 
     val uiState by viewModel.uiState.collectAsState()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val snackBarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-    val layoutDirection = LocalLayoutDirection.current
 
-    // Handle side effects
-    LaunchedEffect(Unit) {
-        viewModel.sideEffects.collect { effect ->
-            when (effect) {
-                FriendDetailSideEffect.NavigateBack -> navController.popBackStack()
-                is FriendDetailSideEffect.ShowError -> {
-                    coroutineScope.launch {
-                        snackBarHostState.showSnackbar(
-                            message = effect.message,
-                            withDismissAction = true
+    Scaffold(
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            KhataPeAppTopBar(
+                title = uiState.friend?.name ?: "Loading...",
+                subtitle = "Transaction History",
+                emoji = "👤",
+                scrollBehavior = scrollBehavior,
+                onBackClick = { navController.popBackStack() },
+                actions = {
+                    IconButton(
+                        onClick = { viewModel.onEvent(FriendDetailEvent.DeleteClicked) },
+                        enabled = !uiState.isDeleting
+                    ) {
+                        Icon(
+                            Icons.Outlined.Delete,
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.error
                         )
                     }
                 }
-            }
-        }
-    }
-
-    Scaffold(
+            )
+        },
         floatingActionButton = {
             AddExpenseFAB {
-                navController.navigate(Screen.FriendsScreens.AddExpense.createRoute(friendId))
+                navController.navigate(Route.AddExpense(friendId = friendId))
             }
         },
-        snackbarHost = { SnackbarHost(snackBarHostState) },
-        modifier = modifier
+        snackbarHost = { SnackbarHost(snackBarHostState) }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    start = innerPadding.calculateStartPadding(layoutDirection),
-                    end = innerPadding.calculateEndPadding(layoutDirection),
-                    bottom = innerPadding.calculateBottomPadding()
-                )
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
+        Box(modifier = Modifier.padding(innerPadding)) {
             when {
-                uiState.isLoading -> LoadingState()
-                uiState.friend == null -> ErrorState()
-                else -> {
-                    FriendHeader(
-                        name = uiState.friend!!.name,
-                        isDeleting = uiState.isDeleting,
-                        onDelete = { viewModel.onEvent(FriendDetailEvent.DeleteClicked) }
-                    )
+                uiState.isLoading -> LoadingState(
+                    loadingText = "Loading friend details...",
+                    modifier = Modifier.fillMaxSize()
+                )
 
+                uiState.friend == null -> ErrorState(
+                    errorText = "Friend not found!!!",
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                else -> {
                     TransactionList(
                         transactions = uiState.transactions,
-                        navController = navController
+                        navController = navController,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
         }
     }
-}
-
-@Composable
-private fun FriendHeader(
-    name: String,
-    isDeleting: Boolean,
-    onDelete: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                text = name,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = "Friend details & transactions",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        IconButton(
-            onClick = onDelete,
-            enabled = !isDeleting,
-            colors = IconButtonDefaults.iconButtonColors(
-                contentColor = MaterialTheme.colorScheme.error,
-                containerColor = MaterialTheme.colorScheme.errorContainer
-            )
-        ) {
-            Icon(Icons.Outlined.Delete, contentDescription = "Delete Friend")
-        }
-    }
-}
-
-@Composable
-private fun LoadingState() {
-    Text(
-        text = "Loading friend details...",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-}
-
-@Composable
-private fun ErrorState() {
-    Text(
-        text = "Friend not found.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.error
-    )
 }
 
 @Composable
@@ -193,7 +135,7 @@ fun TransactionCard(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable {
-                navController.navigate(Screen.FriendsScreens.ViewExpense.createRoute(txn.id))
+                navController.navigate(Route.ViewExpense(expenseId = txn.id))
             },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -241,19 +183,77 @@ fun TransactionCard(
 @Composable
 fun TransactionList(
     transactions: List<Transaction>,
-    navController: NavController
+    navController: NavController,
+    modifier: Modifier = Modifier
 ) {
-    if (transactions.isEmpty()) {
-        Text(
-            text = "No transactions yet.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    } else {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(transactions.size) { index ->
-                TransactionCard(txn = transactions[index], navController = navController)
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // 1. Balance Summary Header
+        item {
+            BalanceSummaryHeader(transactions)
+        }
+
+        item {
+            Text(
+                text = "Recent Transactions",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        // 2. Transactions
+        if (transactions.isEmpty()) {
+            item {
+                Text(
+                    text = "No transactions yet.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 32.dp)
+                )
             }
+        } else {
+            items(transactions, key = { it.id }) { txn ->
+                TransactionCard(txn = txn, navController = navController)
+            }
+        }
+    }
+}
+
+@Composable
+private fun BalanceSummaryHeader(transactions: List<Transaction>) {
+    val totalDebit =
+        transactions.filter { it.direction == TransactionDirection.DEBIT }.sumOf { it.amount }
+    val totalCredit =
+        transactions.filter { it.direction == TransactionDirection.CREDIT }.sumOf { it.amount }
+    val netBalance = totalCredit - totalDebit
+
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(20.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Net Balance", style = MaterialTheme.typography.labelMedium)
+            Text(
+                text = "₹${netBalance.toInt()}",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                color = if (netBalance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+            )
+            Text(
+                text = if (netBalance >= 0) "They owe you" else "You owe them",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }

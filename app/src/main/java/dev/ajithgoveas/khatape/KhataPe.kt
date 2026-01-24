@@ -1,19 +1,23 @@
 package dev.ajithgoveas.khatape
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import androidx.navigation.navigation
+import androidx.navigation.toRoute
 import dev.ajithgoveas.khatape.ui.navigation.BottomNavigationBar
-import dev.ajithgoveas.khatape.ui.navigation.Screen
+import dev.ajithgoveas.khatape.ui.navigation.Route
 import dev.ajithgoveas.khatape.ui.screen.addExpense.AddExpenseScreen
 import dev.ajithgoveas.khatape.ui.screen.dashboard.DashboardScreen
 import dev.ajithgoveas.khatape.ui.screen.editExpense.EditExpenseScreen
@@ -27,93 +31,60 @@ import dev.ajithgoveas.khatape.ui.theme.KhataPeTheme
 fun KhataPe(
     navController: NavHostController = rememberNavController()
 ) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    // Proper way to check for route visibility using reified hasRoute
+    val shouldShowBottomBar = currentDestination?.let { dest ->
+        dest.hasRoute<Route.Dashboard>() ||
+                dest.hasRoute<Route.FriendsList>() ||
+                dest.hasRoute<Route.Settings>()
+    } ?: false
+
     KhataPeTheme {
         Scaffold(
-            bottomBar = { BottomNavigationBar(navController) }
+            bottomBar = {
+                if (shouldShowBottomBar) BottomNavigationBar(navController)
+            }
         ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
-                NavHost(
-                    navController = navController,
-                    // The start destination is now the route of the top-level graph
-                    startDestination = Screen.BottomNavItem.Dashboard.route
-                ) {
+            NavHost(
+                navController = navController,
+                startDestination = Route.DashboardGraph,
+                modifier = Modifier.padding(innerPadding),
+                enterTransition = { fadeIn(animationSpec = tween(400)) },
+                exitTransition = { fadeOut(animationSpec = tween(400)) }
+            ) {
+                // Dashboard Graph
+                navigation<Route.DashboardGraph>(startDestination = Route.Dashboard) {
+                    composable<Route.Dashboard> { DashboardScreen() }
+                }
 
-                    // Dashboard Navigation Graph
-                    navigation(
-                        route = Screen.BottomNavItem.Dashboard.route,
-                        startDestination = "dashboard_screen"
-                    ) {
-                        composable("dashboard_screen") {
-                            DashboardScreen()
-                        }
+                // Friends Graph
+                navigation<Route.FriendsGraph>(startDestination = Route.FriendsList) {
+                    composable<Route.FriendsList> {
+                        FriendsScreen(navController = navController)
                     }
-
-                    // Friends Navigation Graph
-                    navigation(
-                        route = Screen.BottomNavItem.Friends.route,
-                        startDestination = Screen.FriendsScreens.FriendsList.route
-                    ) {
-                        composable(Screen.FriendsScreens.FriendsList.route) {
-                            FriendsScreen(navController = navController)
-                        }
-
-                        composable(
-                            route = Screen.FriendsScreens.FriendDetail.route,
-                            arguments = listOf(navArgument("friendId") { type = NavType.LongType })
-                        ) { backStackEntry ->
-                            val friendId = backStackEntry.arguments?.getLong("friendId") ?: -1L
-                            FriendDetailScreen(friendId = friendId, navController = navController)
-                        }
-
-                        composable(
-                            route = Screen.FriendsScreens.AddExpense.route,
-                            arguments = listOf(
-                                navArgument("friendId") {
-                                    type = NavType.LongType
-                                    defaultValue = -1L
-                                }
-                            )
-                        ) { backStackEntry ->
-                            val friendId = backStackEntry.arguments?.getLong("friendId") ?: -1L
-                            AddExpenseScreen(friendId = friendId, navController = navController)
-                        }
-
-                        composable(
-                            route = Screen.FriendsScreens.ViewExpense.route,
-                            arguments = listOf(
-                                navArgument("expenseId") {
-                                    type = NavType.LongType
-                                    defaultValue = -1L
-                                }
-                            )
-                        ) { backStackEntry ->
-                            val expenseId = backStackEntry.arguments?.getLong("expenseId") ?: -1L
-                            ViewExpenseScreen(expenseId = expenseId, navController = navController)
-                        }
-
-                        composable(
-                            route = Screen.FriendsScreens.EditExpense.route,
-                            arguments = listOf(
-                                navArgument("expenseId") {
-                                    type = NavType.LongType
-                                    defaultValue = -1L
-                                }
-                            )
-                        ) { backStackEntry ->
-                            val expenseId = backStackEntry.arguments?.getLong("expenseId") ?: -1L
-                            EditExpenseScreen(expenseId = expenseId, navController = navController)
-                        }
+                    composable<Route.FriendDetail> { backStackEntry ->
+                        val args = backStackEntry.toRoute<Route.FriendDetail>()
+                        FriendDetailScreen(friendId = args.friendId, navController = navController)
                     }
-
-                    // Settings Navigation Graph
-                    navigation(
-                        route = Screen.BottomNavItem.Settings.route,
-                        startDestination = "settings_screen"
-                    ) {
-                        composable("settings_screen") {
-                            SettingsScreen()
-                        }
+                    composable<Route.AddExpense> { backStackEntry ->
+                        val args = backStackEntry.toRoute<Route.AddExpense>()
+                        AddExpenseScreen(friendId = args.friendId, navController = navController)
                     }
+                    composable<Route.ViewExpense> { backStackEntry ->
+                        val args = backStackEntry.toRoute<Route.ViewExpense>()
+                        ViewExpenseScreen(expenseId = args.expenseId, navController = navController)
+                    }
+                    composable<Route.EditExpense> { backStackEntry ->
+                        val args = backStackEntry.toRoute<Route.EditExpense>()
+                        EditExpenseScreen(expenseId = args.expenseId, navController = navController)
+                    }
+                }
+
+                // Settings Graph
+                navigation<Route.SettingsGraph>(startDestination = Route.Settings) {
+                    composable<Route.Settings> { SettingsScreen() }
                 }
             }
         }

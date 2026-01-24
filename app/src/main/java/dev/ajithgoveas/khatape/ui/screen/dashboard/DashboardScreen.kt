@@ -3,94 +3,113 @@ package dev.ajithgoveas.khatape.ui.screen.dashboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.ajithgoveas.khatape.domain.model.FriendSummary
 import dev.ajithgoveas.khatape.ui.components.AnalyticsCard
 import dev.ajithgoveas.khatape.ui.components.AvatarIcon
+import dev.ajithgoveas.khatape.ui.components.KhataPeAppTopBar
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
-    val layoutDirection = LocalLayoutDirection.current
+    // 1. Define Scroll Behavior
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val summaries by viewModel.summaries.collectAsState()
 
     val totalCredit = summaries.sumOf { it.totalCredit }
     val totalDebit = summaries.sumOf { it.totalDebit }
 
     Scaffold(
-        modifier = modifier
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection), // 2. Connect to Scroll
+        topBar = {
+            KhataPeAppTopBar(
+                title = "Dashboard",
+                subtitle = "Track expense with trust.",
+                emoji = "🏠",
+                scrollBehavior = scrollBehavior // 3. Pass it to the bar
+            )
+        }
     ) { innerPadding ->
-        Column(
+        // Use LazyColumn for the entire screen to leverage nested scrolling
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    start = innerPadding.calculateStartPadding(layoutDirection),
-                    end = innerPadding.calculateEndPadding(layoutDirection),
-                    bottom = innerPadding.calculateBottomPadding()
-                )
-                .padding(16.dp),
+                .padding(innerPadding),
+            contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            DashboardHeader()
+            item {
+                AnalyticsCard(
+                    debitAmount = totalDebit.toInt(),
+                    creditAmount = totalCredit.toInt()
+                )
+            }
 
-            AnalyticsCard(
-                debitAmount = totalDebit.toInt(),
-                creditAmount = totalCredit.toInt()
-            )
+            item { SectionTitle("Recent Activity") }
 
-            SectionTitle("Recent Activity")
-
-            RecentActivityList(
-                summaries = summaries,
-                modifier = Modifier.fillMaxSize()
-            )
+            if (summaries.isEmpty()) {
+                item {
+                    Text(
+                        text = "No recent transactions yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                items(summaries) { summary ->
+                    RecentCard(summary = summary)
+                }
+            }
         }
     }
 }
 
-@Composable
-private fun DashboardHeader() {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            "🏠 Dashboard",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            "Track expense with trust.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        HorizontalDivider()
-    }
-}
+/**
+ * Old header component (now replaced by AppTopBar).
+ * Keeping it commented for reference.
+ */
+//@Composable
+//private fun DashboardHeader() {
+//    Column(
+//        verticalArrangement = Arrangement.spacedBy(4.dp)
+//    ) {
+//        Text(
+//            "🏠 Dashboard",
+//            style = MaterialTheme.typography.headlineMedium,
+//            color = MaterialTheme.colorScheme.primary
+//        )
+//        Text(
+//            "Track expense with trust.",
+//            style = MaterialTheme.typography.bodyMedium,
+//            color = MaterialTheme.colorScheme.onSurfaceVariant
+//        )
+//        Spacer(modifier = Modifier.height(4.dp))
+//        HorizontalDivider()
+//    }
+//}
 
 @Composable
 private fun SectionTitle(title: String) {
