@@ -2,22 +2,31 @@ package dev.ajithgoveas.khatape.ui.navigation
 
 import kotlinx.serialization.Serializable
 
+@Serializable
 sealed class Route {
     // Graphs
     @Serializable
-    object DashboardGraph : Route()
+    data object DashboardGraph : Route()
     @Serializable
-    object FriendsGraph : Route()
+    data object AnalyticsGraph : Route()
     @Serializable
-    object SettingsGraph : Route()
+    data object FriendsGraph : Route()
+    @Serializable
+    data object SettingsGraph : Route()
 
     // Dashboard Screens
     @Serializable
-    object Dashboard : Route()
+    data object Dashboard : Route()
+
+    // Analytics Screens
+    @Serializable
+    data object Analytics : Route()
 
     // Friends Screens
     @Serializable
-    object FriendsList : Route()
+    data object FriendsList : Route()
+
+    // Use data classes for things with parameters
     @Serializable
     data class FriendDetail(val friendId: Long) : Route()
     @Serializable
@@ -29,5 +38,5 @@ sealed class Route {
 
     // Settings Screens
     @Serializable
-    object Settings : Route()
+    data object Settings : Route()
 }

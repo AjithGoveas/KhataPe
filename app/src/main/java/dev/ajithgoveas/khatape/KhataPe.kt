@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,6 +20,7 @@ import androidx.navigation.toRoute
 import dev.ajithgoveas.khatape.ui.navigation.BottomNavigationBar
 import dev.ajithgoveas.khatape.ui.navigation.Route
 import dev.ajithgoveas.khatape.ui.screen.addExpense.AddExpenseScreen
+import dev.ajithgoveas.khatape.ui.screen.analytics.AnalyticsScreen
 import dev.ajithgoveas.khatape.ui.screen.dashboard.DashboardScreen
 import dev.ajithgoveas.khatape.ui.screen.editExpense.EditExpenseScreen
 import dev.ajithgoveas.khatape.ui.screen.friendDetail.FriendDetailScreen
@@ -35,10 +37,11 @@ fun KhataPe(
     val currentDestination = navBackStackEntry?.destination
 
     // Proper way to check for route visibility using reified hasRoute
-    val shouldShowBottomBar = currentDestination?.let { dest ->
-        dest.hasRoute<Route.Dashboard>() ||
-                dest.hasRoute<Route.FriendsList>() ||
-                dest.hasRoute<Route.Settings>()
+    val shouldShowBottomBar = currentDestination?.hierarchy?.any { dest ->
+        dest.hasRoute<Route.DashboardGraph>() ||
+                dest.hasRoute<Route.AnalyticsGraph>() ||
+                dest.hasRoute<Route.FriendsGraph>() ||
+                dest.hasRoute<Route.SettingsGraph>()
     } ?: false
 
     KhataPeTheme {
@@ -49,14 +52,19 @@ fun KhataPe(
         ) { innerPadding ->
             NavHost(
                 navController = navController,
+                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
                 startDestination = Route.DashboardGraph,
-                modifier = Modifier.padding(innerPadding),
                 enterTransition = { fadeIn(animationSpec = tween(400)) },
                 exitTransition = { fadeOut(animationSpec = tween(400)) }
             ) {
                 // Dashboard Graph
                 navigation<Route.DashboardGraph>(startDestination = Route.Dashboard) {
                     composable<Route.Dashboard> { DashboardScreen() }
+                }
+
+                // Analytics Graph
+                navigation<Route.AnalyticsGraph>(startDestination = Route.Analytics) {
+                    composable<Route.Analytics> { AnalyticsScreen() }
                 }
 
                 // Friends Graph

@@ -23,6 +23,9 @@ class TransactionRepository @Inject constructor(
     fun getTransactionsByFriendId(friendId: Long): Flow<List<TransactionEntity>> =
         transactionDao.getByFriend(friendId = friendId)
 
+    // READ: Gets all transactions.
+    fun getAllTransactions(): Flow<List<TransactionEntity>> = transactionDao.getAllTransactions()
+
     // READ: Gets all due transactions for a specific friend.
     suspend fun getUpcomingTransactionsWithFriend(daysAhead: Int): Flow<List<TransactionEntity>> {
         val now = System.currentTimeMillis()

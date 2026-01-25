@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.StackedBarChart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -22,34 +23,32 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         Triple(Route.DashboardGraph, "Home", Icons.Default.Home),
+        Triple(Route.AnalyticsGraph, "Analytics", Icons.Default.StackedBarChart),
         Triple(Route.FriendsGraph, "Friends", Icons.Default.Group),
         Triple(Route.SettingsGraph, "Settings", Icons.Default.Settings)
     )
 
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 8.dp
+        // Lowering elevation slightly for M3 look, tonal elevation handles it
+        tonalElevation = 3.dp
     ) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
 
         items.forEach { (route, label, icon) ->
-            // Check if the current graph is in the hierarchy
-            val isSelected = currentDestination?.hierarchy?.any { dest ->
-                when (route) {
-                    is Route.DashboardGraph -> dest.hasRoute<Route.DashboardGraph>()
-                    is Route.FriendsGraph -> dest.hasRoute<Route.FriendsGraph>()
-                    is Route.SettingsGraph -> dest.hasRoute<Route.SettingsGraph>()
-                    else -> false
-                }
+            // Use hierarchy to keep tab active when in sub-screens
+            val isSelected = currentDestination?.hierarchy?.any {
+                it.hasRoute(route::class)
             } == true
 
             NavigationBarItem(
                 selected = isSelected,
-                label = { Text(label) },
+                label = { Text(label, style = MaterialTheme.typography.labelMedium) },
                 icon = { Icon(icon, contentDescription = label) },
                 onClick = {
                     navController.navigate(route) {
+                        // Standard Tab switching logic
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }

@@ -7,7 +7,7 @@ import dagger.hilt.android.HiltAndroidApp
 class KhataPeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        deleteDatabase("khata_pe")
+//        deleteDatabase("khata_pe")
         deleteDatabase("androidx.work.workdb")
     }
 }

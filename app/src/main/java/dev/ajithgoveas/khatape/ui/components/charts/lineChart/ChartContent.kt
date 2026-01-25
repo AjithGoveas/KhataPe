@@ -65,7 +65,7 @@ internal fun ChartContent(
     var lowerValue by rememberSaveable {
         mutableStateOf(linesParameters.getLowerValue())
     }
-    checkIfDataValid(xAxisData = xAxisData, linesParameters = linesParameters)
+//    checkIfDataValid(xAxisData = xAxisData, linesParameters = linesParameters)
 
     Canvas(
         modifier = modifier
@@ -180,11 +180,15 @@ internal fun ChartContent(
 }
 
 private fun List<LineParameters>.getUpperValue(): Double {
-    return this.flatMap { item -> item.data }.maxOrNull()?.plus(1.0) ?: 0.0
+    val max = this.flatMap { item -> item.data }.maxOrNull() ?: 0.0
+    // Add a 10% buffer so the point isn't touching the very top
+    return if (max > 0) max * 1.1 else max * 0.9
 }
 
 private fun List<LineParameters>.getLowerValue(): Double {
-    return this.flatMap { item -> item.data }.minOrNull() ?: 0.0
+    val min = this.flatMap { item -> item.data }.minOrNull() ?: 0.0
+    // Allow lowerValue to be negative. If min is -100, lowerValue becomes -110.
+    return if (min < 0) min * 1.1 else min * 0.9
 }
 
 private fun CoroutineScope.collectToSnapShotFlow(

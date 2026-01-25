@@ -21,6 +21,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE friendId = :friendId ORDER BY timestamp DESC")
     fun getByFriend(friendId: Long): Flow<List<TransactionEntity>>
 
+    @Query("SELECT * FROM transactions")
+    fun getAllTransactions(): Flow<List<TransactionEntity>>
+
     @Query("UPDATE transactions SET isSettled = 1 WHERE id = :id")
     suspend fun markSettled(id: Long): Int
 
