@@ -14,13 +14,13 @@ internal fun DrawScope.ratioText(
     textRatioStyle: TextStyle,
     topLeft: Offset,
 ) {
-    drawContext.canvas.nativeCanvas.apply {
-        drawText(
-            textMeasurer = textMeasurer,
-            text = "${ratio}%",
-            style = textRatioStyle,
-            topLeft = topLeft,
-            overflow = TextOverflow.Visible
-        )
-    }
+    // Avoid nativeCanvas for standard text drawing to keep it mindful and consistent
+    drawText(
+        textMeasurer = textMeasurer,
+        text = "$ratio%",
+        style = textRatioStyle,
+        topLeft = topLeft,
+        overflow = TextOverflow.Visible,
+        softWrap = false
+    )
 }

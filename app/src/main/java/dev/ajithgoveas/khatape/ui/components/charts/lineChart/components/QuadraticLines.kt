@@ -45,8 +45,8 @@ internal fun DrawScope.drawQuarticLineWithShadow(
 
     if (line.lineShadow && !specialChart) {
         val fillPath = strokePathOfQuadraticLine.apply {
-            lineTo(x = (size.width - xRegionWidth.toPx()) + 40.dp.toPx(), y = size.height * 40)
-            lineTo(x = spacingX.toPx() * 2, y = size.height * 40)
+            lineTo(size.width - xRegionWidth.toPx() + 40.dp.toPx(), size.height * 40)
+            lineTo(spacingX.toPx() * 2, size.height * 40)
             close()
         }
         clipRect(right = size.width * animatedProgress.value) {
@@ -111,18 +111,13 @@ fun DrawScope.drawLineAsQuadratic(
 
         val tolerance = 20.dp.toPx()
         val savedClicks =
-            clickedOnThisPoint(
-                clickedPoints,
-                x = xFirstPoint.toPx(),
-                y = yFirstPoint,
-                tolerance = tolerance
-            )
+            clickedOnThisPoint(clickedPoints, xFirstPoint.toPx(), yFirstPoint, tolerance)
         if (savedClicks) {
             if (lastClickedPoint != null) {
                 clickedPoints.clear()
                 lastClickedPoint = null
             } else {
-                lastClickedPoint = Pair(first = xFirstPoint.toPx(), second = yFirstPoint.toFloat())
+                lastClickedPoint = Pair(xFirstPoint.toPx(), yFirstPoint.toFloat())
                 circleWithRectAndText(
                     x = xFirstPoint,
                     y = yFirstPoint,
@@ -137,32 +132,32 @@ fun DrawScope.drawLineAsQuadratic(
         }
 
         if (index == 0) {
-            moveTo(x = xFirstPoint.toPx(), y = yFirstPoint.toFloat())
+            moveTo(xFirstPoint.toPx(), yFirstPoint.toFloat())
             medX = ((xFirstPoint + xSecondPoint) / 2f).toPx()
             cubicTo(
-                x1 = medX,
-                y1 = yFirstPoint.toFloat(),
-                x2 = medX,
-                y2 = ySecondPoint.toFloat(),
-                x3 = xSecondPoint.toPx(),
-                y3 = ySecondPoint.toFloat()
+                medX,
+                yFirstPoint.toFloat(),
+                medX,
+                ySecondPoint.toFloat(),
+                xSecondPoint.toPx(),
+                ySecondPoint.toFloat()
             )
         } else {
             medX = ((xFirstPoint + xSecondPoint) / 2f).toPx()
             cubicTo(
-                x1 = medX,
-                y1 = yFirstPoint.toFloat(),
-                x2 = medX,
-                y2 = ySecondPoint.toFloat(),
-                x3 = xSecondPoint.toPx(),
-                y3 = ySecondPoint.toFloat()
+                medX,
+                yFirstPoint.toFloat(),
+                medX,
+                ySecondPoint.toFloat(),
+                xSecondPoint.toPx(),
+                ySecondPoint.toFloat()
             )
         }
 
         if (index == 0 && specialChart) {
             chartCircle(
-                x = xFirstPoint.toPx(),
-                y = yFirstPoint.toFloat(),
+                xFirstPoint.toPx(),
+                yFirstPoint.toFloat(),
                 color = lineParameter.lineColor,
                 animatedProgress = animatedProgress,
             )

@@ -29,35 +29,19 @@ internal fun DrawScope.circleWithRectAndText(
     x: Dp,
     y: Double,
 ) {
-    chartCircle(
-        x = x.toPx(),
-        y = y.toFloat(),
-        color = line.lineColor,
-        animatedProgress = animatedProgress,
-        stroke = stroke
-    )
-    chartRectangleWithText(
-        x = x,
-        y = y,
-        color = line.lineColor,
-        textMeasurer = textMeasure,
-        infoText = info
-    )
+    chartCircle(x.toPx(), y.toFloat(), line.lineColor, animatedProgress, stroke)
+    chartRectangleWithText(x, y, line.lineColor, textMeasure, info)
 }
 
 private fun DrawScope.chartRectangleWithText(
-    x: Dp,
-    y: Double,
-    color: Color,
-    textMeasurer: TextMeasurer,
-    infoText: Double,
+    x: Dp, y: Double, color: Color, textMeasurer: TextMeasurer, infoText: Double,
 ) {
-    val rectSize = Size(width = 50.dp.toPx(), height = 30.dp.toPx())
+    val rectSize = Size(50.dp.toPx(), 30.dp.toPx())
     val rectTopLeft = Offset(
-        x = x.toPx() - (rectSize.width / 1.5.toFloat()),
-        y = y.toFloat() - (rectSize.height * 1.5.toFloat())
+        x.toPx() - rectSize.width / 1.5.toFloat(),
+        y.toFloat() - rectSize.height * 1.5.toFloat()
     )
-    val rectBounds = Rect(offset = rectTopLeft, size = rectSize)
+    val rectBounds = Rect(rectTopLeft, rectSize)
     val text = "Value:${infoText.toFloat().formatToThousandsMillionsBillions()}"
 
     val textStyle = TextStyle(fontSize = 8.sp, color = Color.Black)
@@ -68,8 +52,8 @@ private fun DrawScope.chartRectangleWithText(
     )
 
     val textOffset = Offset(
-        x = (rectTopLeft.x + (rectSize.width / 2)) - (textLayoutResult.size.width / 2),
-        y = rectTopLeft.y + (rectSize.height / 4) + (textLayoutResult.size.height / 2)
+        rectTopLeft.x + rectSize.width / 2 - textLayoutResult.size.width / 2,
+        rectTopLeft.y + rectSize.height / 4 + textLayoutResult.size.height / 2
     )
 
     drawRoundRect(

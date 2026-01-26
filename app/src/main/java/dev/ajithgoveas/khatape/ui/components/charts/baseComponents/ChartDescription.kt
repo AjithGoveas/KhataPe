@@ -1,4 +1,4 @@
-package dev.ajithgoveas.khatape.ui.components.charts.base
+package dev.ajithgoveas.khatape.ui.components.charts.baseComponents
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

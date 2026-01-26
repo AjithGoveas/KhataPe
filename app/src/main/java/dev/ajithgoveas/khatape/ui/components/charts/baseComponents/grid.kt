@@ -1,17 +1,19 @@
-package dev.ajithgoveas.khatape.ui.components.charts.base
+package dev.ajithgoveas.khatape.ui.components.charts.baseComponents
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
-import dev.ajithgoveas.khatape.ui.components.charts.base.model.GridOrientation
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.model.GridOrientation
 import dev.ajithgoveas.khatape.ui.components.charts.utils.formatToThousandsMillionsBillions
 
+@OptIn(ExperimentalTextApi::class)
 internal fun DrawScope.grid(
     xAxisDataSize: Int,
     isShowGrid: Boolean,
@@ -33,7 +35,7 @@ internal fun DrawScope.grid(
     val yTextLayoutResult = textMeasurer.measure(
         text = AnnotatedString(upperValue.formatToThousandsMillionsBillions()),
     ).size.width
-    val textSpace = yTextLayoutResult - (yTextLayoutResult / 4)
+    val textSpace = yTextLayoutResult - (yTextLayoutResult/4)
 
     if (isShowGrid) {
         when (gridOrientation) {
@@ -94,7 +96,7 @@ private fun DrawScope.drawHorizontalGrid(
     val xAxisMaxValue = size.width
     val yAxisList = mutableListOf<Float>()
 
-    val textSpace = yTextLayoutResult - (yTextLayoutResult / 4)
+    val textSpace = yTextLayoutResult - (yTextLayoutResult/4)
 
     (0..yAxisRange).forEach { i ->
         yAxisList.add(
@@ -107,7 +109,7 @@ private fun DrawScope.drawHorizontalGrid(
             gridColor = gridColor,
             xStart = (yTextLayoutResult * 1.5.toFloat().toDp()).toPx(),
             yStart = yAlignmentValue,
-            xEnd = xAxisMaxValue - (textSpace / 0.9.toFloat().toDp().toPx()),
+            xEnd = xAxisMaxValue - (textSpace/0.9.toFloat().toDp().toPx()),
             yEnd = yAlignmentValue,
             backgroundLineWidth = backgroundLineWidth,
             showGridWithSpacer = showGridWithSpacer

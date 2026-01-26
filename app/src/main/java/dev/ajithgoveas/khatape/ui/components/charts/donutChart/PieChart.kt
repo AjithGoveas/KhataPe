@@ -21,15 +21,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.model.LegendPosition
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.component.PieChartDescriptionComposable
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.component.draPieCircle
-import dev.ajithgoveas.khatape.ui.components.charts.base.model.LegendPosition
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.component.drawPedigreeChart
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.model.ChartTypes
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.model.PieChartData
 import dev.ajithgoveas.khatape.ui.components.charts.utils.ChartDefaultValues
 import dev.ajithgoveas.khatape.ui.components.charts.utils.checkIfDataIsNegative
-import kotlin.math.min
 
 /**
  * Composable function to render a pie chart with an optional legend.
@@ -51,107 +50,74 @@ import kotlin.math.min
 fun PieChart(
     modifier: Modifier = Modifier,
     pieChartData: List<PieChartData>,
-    animation: AnimationSpec<Float> = TweenSpec(durationMillis = 3000),
+    animation: AnimationSpec<Float> = TweenSpec(durationMillis = 1500), // Sped up for better UX
     textRatioStyle: TextStyle = TextStyle.Default.copy(fontSize = 12.sp),
     outerCircularColor: Color = Color.Gray,
     ratioLineColor: Color = Color.Gray,
     descriptionStyle: TextStyle = TextStyle.Default,
     legendPosition: LegendPosition = ChartDefaultValues.legendPosition,
 ) {
-    var totalSum = 0.0f
-    val pieValueWithRatio = mutableListOf<Float>()
-    pieChartData.forEach {
-        totalSum += it.data.toFloat()
-    }
-    pieChartData.forEachIndexed { index, part ->
-        pieValueWithRatio.add(index, 360 * part.data.toFloat() / totalSum)
+    // 1. Data Processing (Memoized to prevent redundant math on every recomposition)
+    val (totalSum, pieValueWithRatio) = remember(pieChartData) {
+        val sum = pieChartData.sumOf { it.data }.toFloat()
+        val ratios = pieChartData.map { 360f * it.data.toFloat() / sum }
+        sum to ratios
     }
 
     val textMeasure = rememberTextMeasurer()
-
-
     checkIfDataIsNegative(data = pieChartData.map { it.data })
-    val transitionProgress = remember(pieValueWithRatio) { Animatable(initialValue = 0F) }
 
+    val transitionProgress = remember(pieChartData) { Animatable(initialValue = 0F) }
     LaunchedEffect(pieChartData) {
         transitionProgress.animateTo(1F, animationSpec = animation)
     }
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        when (legendPosition) {
-            LegendPosition.TOP -> {
-                PieChartDescriptionComposable(
-                    pieChartData = pieChartData,
-                    descriptionStyle = descriptionStyle,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(0.5f)
-                )
-                drawPieChart(
-                    modifier = Modifier.weight(1.5f),
-                    pieChartData = pieChartData,
-                    textRatioStyle = textRatioStyle,
-                    outerCircularColor = outerCircularColor,
-                    ratioLineColor = ratioLineColor,
-                    pieValueWithRatio = pieValueWithRatio,
-                    totalSum = totalSum,
-                    transitionProgress = transitionProgress,
-                    textMeasure = textMeasure
-                )
-            }
+        // Layout logic based on LegendPosition
+        if (legendPosition == LegendPosition.TOP) {
+            PieChartDescriptionComposable(
+                pieChartData = pieChartData,
+                descriptionStyle = descriptionStyle,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
-            LegendPosition.BOTTOM -> {
-                drawPieChart(
-                    modifier = Modifier.weight(1.5f),
-                    pieChartData = pieChartData,
-                    textRatioStyle = textRatioStyle,
-                    outerCircularColor = outerCircularColor,
-                    ratioLineColor = ratioLineColor,
-                    pieValueWithRatio = pieValueWithRatio,
-                    totalSum = totalSum,
-                    transitionProgress = transitionProgress,
-                    textMeasure = textMeasure
-                )
+        DrawPieChart(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            pieChartData = pieChartData,
+            textRatioStyle = textRatioStyle,
+            outerCircularColor = outerCircularColor,
+            ratioLineColor = ratioLineColor,
+            pieValueWithRatio = pieValueWithRatio,
+            totalSum = totalSum,
+            transitionProgress = transitionProgress,
+            textMeasure = textMeasure
+        )
 
-                PieChartDescriptionComposable(
-                    pieChartData = pieChartData,
-                    descriptionStyle = descriptionStyle,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(0.5f)
-                )
-            }
-
-            else -> {
-                drawPieChart(
-                    modifier = Modifier.weight(1.5f),
-                    pieChartData = pieChartData,
-                    textRatioStyle = textRatioStyle,
-                    outerCircularColor = outerCircularColor,
-                    ratioLineColor = ratioLineColor,
-                    pieValueWithRatio = pieValueWithRatio,
-                    totalSum = totalSum,
-                    transitionProgress = transitionProgress,
-                    textMeasure = textMeasure
-                )
-            }
+        if (legendPosition == LegendPosition.BOTTOM) {
+            PieChartDescriptionComposable(
+                pieChartData = pieChartData,
+                descriptionStyle = descriptionStyle,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
-
 }
 
 @Composable
-private fun drawPieChart(
+private fun DrawPieChart(
     modifier: Modifier = Modifier,
     pieChartData: List<PieChartData>,
     textRatioStyle: TextStyle,
     outerCircularColor: Color,
     ratioLineColor: Color,
-    pieValueWithRatio: MutableList<Float>,
+    pieValueWithRatio: List<Float>, // Changed to List for stability
     totalSum: Float,
     transitionProgress: Animatable<Float, AnimationVector1D>,
     textMeasure: TextMeasurer,
@@ -160,12 +126,14 @@ private fun drawPieChart(
         modifier = modifier
             .fillMaxSize()
             .drawBehind {
-                val canvasWidth = size.width
-                val canvasHeight = size.height
-                val minValue = min(canvasWidth, canvasHeight).coerceAtMost(canvasHeight / 2)
-                    .coerceAtMost(canvasWidth / 2)
-                val arcWidth = (size.minDimension.dp.toPx() * 0.13f).coerceAtMost(minValue / 4)
+                // Determine the safe drawing area (leaving 20% room for labels)
+                val safeSize = size.minDimension * 0.75f
+                val minValue = safeSize.coerceAtMost(size.height).coerceAtMost(size.width)
 
+                // Dynamic arc width relative to chart size
+                val arcWidth = (minValue * 0.15f)
+
+                // Render the main segments and callout lines
                 drawPedigreeChart(
                     pieValueWithRatio = pieValueWithRatio,
                     pieChartData = pieChartData,
@@ -178,12 +146,12 @@ private fun drawPieChart(
                     minValue = minValue,
                     pieChart = ChartTypes.PIE_CHART
                 )
-                //draw outer circle
+
+                // Render outer guide circle (slightly transparent for a modern feel)
                 draPieCircle(
-                    circleColor = outerCircularColor,
-                    radiusRatioCircle = (minValue / 2) + (arcWidth / 1.5f)
+                    circleColor = outerCircularColor.copy(alpha = 0.4f),
+                    radiusRatioCircle = (minValue / 2f) + (arcWidth / 1.5f)
                 )
-
-            })
-
+            }
+    )
 }

@@ -16,14 +16,14 @@ internal fun DrawScope.drawCenterText(
     canvasWidth: Float,
     textSize: IntSize
 ) {
-    drawContext.canvas.nativeCanvas.apply {
-        drawText(
-            textMeasurer = textMeasure,
-            text = centerTitle.take(10),
-            style = centerTitleStyle,
-            topLeft = Offset(
-                (canvasWidth - textSize.width) / 2f, (canvasHeight - textSize.height) / 2f
-            ),
+    // Compose drawText is more performant than accessing nativeCanvas directly
+    drawText(
+        textMeasurer = textMeasure,
+        text = centerTitle.take(10), // Keeps logic same
+        style = centerTitleStyle,
+        topLeft = Offset(
+            x = (canvasWidth - textSize.width) / 2f,
+            y = (canvasHeight - textSize.height) / 2f
         )
-    }
+    )
 }

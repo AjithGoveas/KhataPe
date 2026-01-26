@@ -19,9 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.ajithgoveas.khatape.ui.components.charts.base.ChartDescription
-import dev.ajithgoveas.khatape.ui.components.charts.base.model.GridOrientation
-import dev.ajithgoveas.khatape.ui.components.charts.base.model.LegendPosition
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.ChartDescription
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.model.GridOrientation
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.model.LegendPosition
 import dev.ajithgoveas.khatape.ui.components.charts.lineChart.model.LineParameters
 import dev.ajithgoveas.khatape.ui.components.charts.utils.ChartDefaultValues
 
@@ -65,19 +65,19 @@ fun LineChart(
     descriptionStyle: TextStyle = ChartDefaultValues.descriptionDefaultStyle,
     yAxisStyle: TextStyle = ChartDefaultValues.axesStyle,
     xAxisStyle: TextStyle = ChartDefaultValues.axesStyle,
-    chartRatio: Float = ChartDefaultValues.chartRatio,
+    chartRatio: Float = ChartDefaultValues.CHART_RATIO,
     horizontalArrangement: Arrangement.Horizontal = ChartDefaultValues.headerArrangement,
-    yAxisRange: Int = ChartDefaultValues.yAxisRange,
-    showXAxis: Boolean = ChartDefaultValues.showXAxis,
-    showYAxis: Boolean = ChartDefaultValues.showyAxis,
-    oneLineChart: Boolean = ChartDefaultValues.specialChart,
+    yAxisRange: Int = ChartDefaultValues.Y_AXIS_RANGE,
+    showXAxis: Boolean = ChartDefaultValues.SHOW_X_AXIS,
+    showYAxis: Boolean = ChartDefaultValues.SHOW_Y_AXIS,
+    oneLineChart: Boolean = ChartDefaultValues.SPECIAL_CHART,
     gridOrientation: GridOrientation = ChartDefaultValues.gridOrientation,
     legendPosition: LegendPosition = ChartDefaultValues.legendPosition
 ) {
     val clickedPoints = remember { mutableStateListOf<Pair<Float, Float>>() }
 
     Box(modifier.wrapContentHeight()) {
-        Column() {
+        Column {
             when (legendPosition) {
                 LegendPosition.TOP -> {
                     LazyRow(

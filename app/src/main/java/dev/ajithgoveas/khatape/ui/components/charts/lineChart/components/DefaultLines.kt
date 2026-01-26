@@ -44,8 +44,8 @@ internal fun DrawScope.drawDefaultLineWithShadow(
 
     if (line.lineShadow) {
         val fillPath = strokePathOfDefaultLine.apply {
-            lineTo(x = (size.width - xRegionWidth.toPx()) + 40.dp.toPx(), y = size.height * 40)
-            lineTo(x = spacingX.toPx() * 2, y = size.height * 40)
+            lineTo(size.width - xRegionWidth.toPx() + 40.dp.toPx(), size.height * 40)
+            lineTo(spacingX.toPx() * 2, size.height * 40)
             close()
         }
         clipRect(right = size.width * animatedProgress.value) {
@@ -77,7 +77,7 @@ private fun DrawScope.drawLineAsDefault(
     ) { lineParameter, index ->
 
         val yTextLayoutResult = textMeasure.measure(
-            text = AnnotatedString(text = upperValue.formatToThousandsMillionsBillions()),
+            text = AnnotatedString(upperValue.formatToThousandsMillionsBillions()),
         ).size.width
         val textSpace = yTextLayoutResult - (yTextLayoutResult / 4)
         val info = lineParameter.data[index]
@@ -88,12 +88,7 @@ private fun DrawScope.drawLineAsDefault(
 
         val tolerance = 20.dp.toPx()
         val savedClicks =
-            clickedOnThisPoint(
-                clickedPoints = clickedPoints,
-                x = startXPoint.toPx(),
-                y = startYPoint,
-                tolerance = tolerance
-            )
+            clickedOnThisPoint(clickedPoints, startXPoint.toPx(), startYPoint, tolerance)
 
 
         if (savedClicks) {
@@ -101,7 +96,7 @@ private fun DrawScope.drawLineAsDefault(
                 clickedPoints.clear()
                 lastClickedPoint = null
             } else {
-                lastClickedPoint = Pair(first = startXPoint.toPx(), second = startYPoint.toFloat())
+                lastClickedPoint = Pair(startXPoint.toPx(), startYPoint.toFloat())
                 circleWithRectAndText(
                     x = startXPoint,
                     y = startYPoint,
@@ -115,9 +110,9 @@ private fun DrawScope.drawLineAsDefault(
         }
 
         if (index == 0) {
-            moveTo(x = startXPoint.toPx(), y = startYPoint.toFloat())
+            moveTo(startXPoint.toPx(), startYPoint.toFloat())
         } else {
-            lineTo(x = startXPoint.toPx(), y = startYPoint.toFloat())
+            lineTo(startXPoint.toPx(), startYPoint.toFloat())
         }
     }
 }

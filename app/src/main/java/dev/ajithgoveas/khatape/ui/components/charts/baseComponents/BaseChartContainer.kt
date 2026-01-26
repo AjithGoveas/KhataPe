@@ -1,12 +1,14 @@
-package dev.ajithgoveas.khatape.ui.components.charts.base
+package dev.ajithgoveas.khatape.ui.components.charts.baseComponents
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
-import dev.ajithgoveas.khatape.ui.components.charts.base.model.GridOrientation
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.model.GridOrientation
 
+@OptIn(ExperimentalTextApi::class)
 internal fun <T> DrawScope.baseChartContainer(
     xAxisData: List<T>,
     textMeasure: TextMeasurer,

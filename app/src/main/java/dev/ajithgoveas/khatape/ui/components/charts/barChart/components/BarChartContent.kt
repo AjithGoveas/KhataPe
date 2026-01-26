@@ -1,5 +1,6 @@
 package dev.ajithgoveas.khatape.ui.components.charts.barChart.components
 
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -24,20 +25,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.ajithgoveas.khatape.ui.components.charts.barChart.model.BarParameters
-import dev.ajithgoveas.khatape.ui.components.charts.base.baseChartContainer
-import dev.ajithgoveas.khatape.ui.components.charts.base.xAxisDrawing
-import dev.ajithgoveas.khatape.ui.components.charts.utils.ChartDefaultValues.specialChart
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.xAxisDrawing
+import dev.ajithgoveas.khatape.ui.components.charts.utils.ChartDefaultValues.SPECIAL_CHART
 import dev.ajithgoveas.khatape.ui.components.charts.utils.checkIfDataValid
 import dev.ajithgoveas.khatape.ui.components.charts.utils.formatToThousandsMillionsBillions
+import dev.ajithgoveas.khatape.ui.components.charts.barChart.model.BarParameters
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.baseChartContainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalTextApi::class)
 @Composable
 internal fun BarChartContent(
     barsParameters: List<BarParameters>,
@@ -84,17 +87,16 @@ internal fun BarChartContent(
     val density = LocalDensity.current
 
     checkIfDataValid(xAxisData = xAxisData, barParameters = barsParameters)
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .onGloballyPositioned {
-                boxWidth = with(density) {
-                    it.size.width.toDp()
-                }
-                boxHeight = with(density) {
-                    it.size.height.toDp()
-                }
+    Box(modifier = modifier
+        .fillMaxSize()
+        .onGloballyPositioned {
+            boxWidth = with(density) {
+                it.size.width.toDp()
             }
+            boxHeight = with(density) {
+                it.size.height.toDp()
+            }
+        }
     ) {
         Canvas(
             modifier = Modifier.fillMaxSize()
@@ -162,7 +164,7 @@ internal fun BarChartContent(
                     xAxisData = xAxisData,
                     textMeasure = textMeasure,
                     xAxisStyle = xAxisStyle,
-                    specialChart = specialChart,
+                    specialChart = SPECIAL_CHART,
                     xRegionWidth = xRegionWidth,
                     xRegionWidthWithoutSpacing = xRegionWidthWithoutSpacing,
                     height = maxHeight.dp,

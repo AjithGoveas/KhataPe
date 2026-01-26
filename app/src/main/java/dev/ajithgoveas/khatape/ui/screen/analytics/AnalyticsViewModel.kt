@@ -84,8 +84,8 @@ class AnalyticsViewModel @Inject constructor(
     }
         .distinctUntilChanged()
         .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = AnalyticsUiState()
-    )
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = AnalyticsUiState()
+        )
 }

@@ -46,7 +46,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ajithgoveas.khatape.ui.components.AnalyticsCard
 import dev.ajithgoveas.khatape.ui.components.KhataPeAppTopBar
-import dev.ajithgoveas.khatape.ui.components.charts.base.model.LegendPosition
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.model.LegendPosition
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.PieChart
 import dev.ajithgoveas.khatape.ui.components.charts.lineChart.LineChart
 
@@ -60,7 +60,6 @@ fun AnalyticsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
-    // Listen for Side Effects
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
@@ -81,26 +80,16 @@ fun AnalyticsScreen(
                 scrollBehavior = scrollBehavior
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        Crossfade(targetState = uiState.isLoading, label = "loading_fade") { isLoading ->
+        Crossfade(targetState = uiState.isLoading, label = "content_fade") { isLoading ->
             when {
                 isLoading -> LoadingView()
-                // Check if both data sets are essentially empty
-                uiState.netWorthTrend == null -> {
-                    EmptyAnalyticsView()
-                }
-
+                uiState.netWorthTrend == null && uiState.payableDistribution.isEmpty() -> EmptyAnalyticsView()
                 else -> AnalyticsContent(uiState, innerPadding)
             }
         }
-    }
-}
-
-@Composable
-private fun LoadingView(modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(strokeWidth = 3.dp)
     }
 }
 
@@ -109,7 +98,6 @@ private fun AnalyticsContent(
     uiState: AnalyticsUiState,
     innerPadding: PaddingValues
 ) {
-    // 1. Pre-format display values so they don't re-calculate during scroll
     val formattedNetBalance = remember(uiState.overview.netBalance) {
         "₹${"%,.2f".format(uiState.overview.netBalance)}"
     }
@@ -118,13 +106,13 @@ private fun AnalyticsContent(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             top = innerPadding.calculateTopPadding() + 16.dp,
-            bottom = 32.dp,
+            bottom = 40.dp,
             start = 16.dp,
             end = 16.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // Use keys for LazyColumn items to help Compose optimize list updates
+        // 1. Health Summary Card
         item(key = "health_card") {
             AnalyticsCard(
                 debitAmount = uiState.overview.totalPayable.toInt(),
@@ -132,26 +120,32 @@ private fun AnalyticsContent(
             )
         }
 
+        // 2. Net Worth Line Chart
         uiState.netWorthTrend?.let { trend ->
             item(key = "trend_chart") {
                 val accentColor = if (uiState.overview.netBalance < 0)
                     MaterialTheme.colorScheme.error else Color(0xFF4CAF50)
 
-                // Wrap in remember to keep the line parameters stable
-                val lineParams = remember(trend, accentColor) {
-                    listOf(trend.copy(lineColor = accentColor))
+                val filteredLabels = remember(uiState.netWorthLabels) {
+                    var lastSeen = ""
+                    uiState.netWorthLabels.map { date ->
+                        if (date != lastSeen) {
+                            lastSeen = date; date
+                        } else ""
+                    }
                 }
 
                 ChartContainer(
                     title = "Net Worth Trend",
-                    amount = formattedNetBalance
+                    amount = formattedNetBalance,
+                    amountColor = accentColor
                 ) {
                     LineChart(
                         modifier = Modifier.fillMaxSize(),
-                        linesParameters = lineParams,
+                        linesParameters = listOf(trend.copy(lineColor = accentColor)),
                         isGrid = true,
                         gridColor = MaterialTheme.colorScheme.outlineVariant,
-                        xAxisData = uiState.netWorthLabels,
+                        xAxisData = filteredLabels,
                         animateChart = true,
                         yAxisStyle = MaterialTheme.typography.labelSmall,
                         xAxisStyle = MaterialTheme.typography.labelSmall
@@ -160,9 +154,17 @@ private fun AnalyticsContent(
             }
         }
 
+        // 3. Debt/Credit Distribution Pie Chart
         item(key = "distribution_section") {
             DistributionSection(uiState = uiState)
         }
+    }
+}
+
+@Composable
+private fun LoadingView(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(strokeWidth = 3.dp)
     }
 }
 
@@ -210,50 +212,37 @@ fun ChartContainer(
     title: String,
     amount: String,
     modifier: Modifier = Modifier,
+    amountColor: Color = MaterialTheme.colorScheme.onSurface,
     headerAction: @Composable (() -> Unit)? = null,
     chartContent: @Composable () -> Unit
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp) // Tighter vertical rhythm
-        ) {
-            // Title and Amount Row
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = amount,
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-0.5).sp // Modern tight tracking
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                text = title.uppercase(),
+                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.2.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = amount,
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                color = amountColor
+            )
 
-            // Tabs/Actions placed below the header line
-            headerAction?.let {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    it()
-                }
-            }
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Chart Box - We give Pie charts more room by adjusting height based on content
+            headerAction?.invoke()
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(260.dp) // Increased height to prevent legend squishing
-                    .padding(top = 8.dp)
+                    .height(280.dp) // Giving slightly more room for Pedigree lines
             ) {
                 chartContent()
             }
@@ -263,37 +252,43 @@ fun ChartContainer(
 
 @Composable
 private fun DistributionSection(uiState: AnalyticsUiState) {
-    // 1. Determine what we actually have to show
-    val hasDebts = uiState.payableDistribution.isNotEmpty()
-    val hasCredits = uiState.receivableDistribution.isNotEmpty()
+    // 1. Extract distributions for clarity
+    val payable = uiState.payableDistribution
+    val receivable = uiState.receivableDistribution
 
-    // If absolutely nothing, don't even render the Container
-    if (!hasDebts && !hasCredits) return
+    // 2. The "Nothing to show" check
+    // Using isEmpty() is safer and more readable than !isNotEmpty()
+    if (payable.isEmpty() && receivable.isEmpty()) return
 
-    // 2. Manage which tab is selected based on availability
-    // Default to Debts (0) if available, otherwise Credits (1)
+    val hasDebts = payable.isNotEmpty()
+    val hasCredits = receivable.isNotEmpty()
+
+    // 3. Robust Tab State
     var selectedTab by remember(hasDebts, hasCredits) {
         mutableIntStateOf(if (hasDebts) 0 else 1)
     }
 
     val currentData by remember(selectedTab, uiState) {
         derivedStateOf {
-            if (selectedTab == 0) uiState.payableDistribution else uiState.receivableDistribution
+            if (selectedTab == 0) payable else receivable
         }
     }
-    val currentTitle = if (selectedTab == 0) "Who you owe" else "Who owes you"
+
+    val displayAmount = remember(selectedTab, uiState.overview) {
+        if (selectedTab == 0) uiState.overview.totalPayable else uiState.overview.totalReceivable
+    }
 
     ChartContainer(
-        title = "Friend Distribution",
-        amount = currentTitle,
+        title = "Distribution",
+        amount = "₹${"%,.0f".format(displayAmount)}",
         headerAction = {
-            // Only show the toggle if BOTH data sets exist
+            // Only show switch if user has both types of data
             if (hasDebts && hasCredits) {
                 SecondaryTabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = Color.Transparent,
                     divider = {},
-                    modifier = Modifier.fillMaxWidth(0.8f)
+                    modifier = Modifier.padding(bottom = 12.dp)
                 ) {
                     Tab(
                         selected = selectedTab == 0,
@@ -309,14 +304,12 @@ private fun DistributionSection(uiState: AnalyticsUiState) {
             }
         }
     ) {
-        // PieChart gets the full Box space
         PieChart(
             modifier = Modifier.fillMaxSize(),
             pieChartData = currentData,
-            legendPosition = LegendPosition.BOTTOM, // Bottom is usually safer for wide legends
-            descriptionStyle = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            legendPosition = LegendPosition.BOTTOM,
+            descriptionStyle = MaterialTheme.typography.labelSmall.copy(
+                color = MaterialTheme.colorScheme.onSurface
             )
         )
     }

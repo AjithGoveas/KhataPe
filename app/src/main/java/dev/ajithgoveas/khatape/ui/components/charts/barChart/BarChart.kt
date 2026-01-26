@@ -1,9 +1,6 @@
 package dev.ajithgoveas.khatape.ui.components.charts.barChart
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
@@ -14,8 +11,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.ajithgoveas.khatape.ui.components.charts.barChart.components.BarChartContent
 import dev.ajithgoveas.khatape.ui.components.charts.barChart.model.BarParameters
-import dev.ajithgoveas.khatape.ui.components.charts.base.ChartDescription
-import dev.ajithgoveas.khatape.ui.components.charts.base.model.LegendPosition
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.ChartDescription
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.model.LegendPosition
 import dev.ajithgoveas.khatape.ui.components.charts.utils.ChartDefaultValues
 
 /**
@@ -57,9 +54,9 @@ fun BarChart(
     xAxisStyle: TextStyle = ChartDefaultValues.axesStyle,
     horizontalArrangement: Arrangement.Horizontal = ChartDefaultValues.headerArrangement,
     backgroundLineWidth: Float = ChartDefaultValues.backgroundLineWidth.value,
-    yAxisRange: Int = ChartDefaultValues.yAxisRange,
-    showXAxis: Boolean = ChartDefaultValues.showXAxis,
-    showYAxis: Boolean = ChartDefaultValues.showyAxis,
+    yAxisRange: Int = ChartDefaultValues.Y_AXIS_RANGE,
+    showXAxis: Boolean = ChartDefaultValues.SHOW_X_AXIS,
+    showYAxis: Boolean = ChartDefaultValues.SHOW_Y_AXIS,
     barWidth: Dp = ChartDefaultValues.barWidth,
     spaceBetweenBars: Dp = ChartDefaultValues.spaceBetweenBars,
     spaceBetweenGroups: Dp = ChartDefaultValues.spaceBetweenGroups,

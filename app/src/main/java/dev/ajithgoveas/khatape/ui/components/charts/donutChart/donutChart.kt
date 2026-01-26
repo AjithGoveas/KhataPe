@@ -24,10 +24,10 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.model.LegendPosition
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.component.PieChartDescriptionComposable
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.component.draPieCircle
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.component.drawCenterText
-import dev.ajithgoveas.khatape.ui.components.charts.base.model.LegendPosition
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.component.drawPedigreeChart
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.model.ChartTypes
 import dev.ajithgoveas.khatape.ui.components.charts.donutChart.model.PieChartData
@@ -53,7 +53,6 @@ import kotlin.math.min
  * @see PieChartData
  * @see LegendPosition
  */
-
 @Composable
 fun DonutChart(
     modifier: Modifier = Modifier,
@@ -105,7 +104,7 @@ fun DonutChart(
                         .fillMaxWidth()
                         .weight(0.5f)
                 )
-                drawDonutChart(
+                DrawDonutChart(
                     modifier = Modifier.weight(1.5f),
                     textMeasure = textMeasure,
                     pieChartData = pieChartData,
@@ -123,7 +122,7 @@ fun DonutChart(
             }
 
             LegendPosition.BOTTOM -> {
-                drawDonutChart(
+                DrawDonutChart(
                     modifier = Modifier.weight(1.5f),
                     textMeasure = textMeasure,
                     pieChartData = pieChartData,
@@ -148,7 +147,7 @@ fun DonutChart(
             }
 
             LegendPosition.DISAPPEAR -> {
-                drawDonutChart(
+                DrawDonutChart(
                     modifier = Modifier.weight(1.5f),
                     textMeasure = textMeasure,
                     pieChartData = pieChartData,
@@ -172,7 +171,7 @@ fun DonutChart(
 }
 
 @Composable
-private fun drawDonutChart(
+private fun DrawDonutChart(
     modifier: Modifier = Modifier,
     textMeasure: TextMeasurer,
     pieChartData: List<PieChartData>,
@@ -228,8 +227,6 @@ private fun drawDonutChart(
                     circleColor = innerCircularColor,
                     radiusRatioCircle = (minValue / 2) - (arcWidth / 1.5f)
                 )
-
-
-            })
-
+            }
+    )
 }

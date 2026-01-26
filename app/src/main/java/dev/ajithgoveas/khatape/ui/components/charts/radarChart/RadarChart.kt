@@ -27,7 +27,6 @@ import dev.ajithgoveas.khatape.ui.components.charts.radarChart.model.Polygon
  * @see Polygon
  * @see NetLinesStyle
  */
-
 @Composable
 fun RadarChart(
     radarLabels: List<String>,

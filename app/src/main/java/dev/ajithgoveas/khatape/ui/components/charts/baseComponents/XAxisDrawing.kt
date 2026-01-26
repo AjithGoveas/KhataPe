@@ -1,18 +1,17 @@
-package dev.ajithgoveas.khatape.ui.components.charts.base
+package dev.ajithgoveas.khatape.ui.components.charts.baseComponents
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.TextMeasurer
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import dev.ajithgoveas.khatape.ui.components.charts.utils.formatToThousandsMillionsBillions
 
+
+@OptIn(ExperimentalTextApi::class)
 internal fun <T> DrawScope.xAxisDrawing(
     xAxisData: List<T>,
     textMeasure: TextMeasurer,
@@ -27,7 +26,7 @@ internal fun <T> DrawScope.xAxisDrawing(
     val yTextLayoutResult = textMeasure.measure(
         text = AnnotatedString(upperValue.formatToThousandsMillionsBillions()),
     ).size.width
-    val textSpace = yTextLayoutResult - (yTextLayoutResult / 4)
+    val textSpace = yTextLayoutResult - (yTextLayoutResult/4)
 
     xAxisData.forEachIndexed { index, dataPoint ->
         val xLength = (textSpace.toDp()) + (index * xRegionWidth)
@@ -48,6 +47,7 @@ internal fun <T> DrawScope.xAxisDrawing(
     }
 }
 
+@OptIn(ExperimentalTextApi::class)
 internal fun <T> DrawScope.xAxisDrawing(
     xAxisData: List<T>,
     height: Dp,

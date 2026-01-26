@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import dev.ajithgoveas.khatape.ui.components.charts.radarChart.model.Polygon
 
-internal fun DrawScope.drawPolygonShape(
+internal fun drawPolygonShape(
     drawScope: DrawScope,
     polygon: Polygon,
     radius: Float,
@@ -39,7 +39,7 @@ internal fun DrawScope.drawPolygonShape(
 
 private fun Path.drawPolygon(polygonCorners: List<Offset>) {
     moveTo(polygonCorners[0].x, polygonCorners[0].y)
-    polygonCorners.forEachIndexed { index, offset ->
+    polygonCorners.forEachIndexed { _, offset ->
         lineTo(offset.x, offset.y)
     }
     close()

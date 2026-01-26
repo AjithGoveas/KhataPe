@@ -1,8 +1,9 @@
-package dev.ajithgoveas.khatape.ui.components.charts.base
+package dev.ajithgoveas.khatape.ui.components.charts.baseComponents
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -10,6 +11,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.times
 import dev.ajithgoveas.khatape.ui.components.charts.utils.formatToThousandsMillionsBillions
 
+@OptIn(ExperimentalTextApi::class)
 internal fun DrawScope.yAxisDrawing(
     upperValue: Float, lowerValue: Float,
     textMeasure: TextMeasurer,

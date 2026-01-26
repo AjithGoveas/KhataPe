@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -22,8 +22,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.ajithgoveas.khatape.ui.components.charts.base.baseChartContainer
-import dev.ajithgoveas.khatape.ui.components.charts.base.model.GridOrientation
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.baseChartContainer
+import dev.ajithgoveas.khatape.ui.components.charts.baseComponents.model.GridOrientation
 import dev.ajithgoveas.khatape.ui.components.charts.lineChart.components.drawDefaultLineWithShadow
 import dev.ajithgoveas.khatape.ui.components.charts.lineChart.components.drawQuarticLineWithShadow
 import dev.ajithgoveas.khatape.ui.components.charts.lineChart.model.LineParameters
@@ -60,12 +60,12 @@ internal fun ChartContent(
         if (animateChart) Animatable(0f) else Animatable(1f)
     }
     var upperValue by rememberSaveable {
-        mutableStateOf(linesParameters.getUpperValue())
+        mutableDoubleStateOf(linesParameters.getUpperValue())
     }
     var lowerValue by rememberSaveable {
-        mutableStateOf(linesParameters.getLowerValue())
+        mutableDoubleStateOf(linesParameters.getLowerValue())
     }
-//    checkIfDataValid(xAxisData = xAxisData, linesParameters = linesParameters)
+    checkIfDataValid(xAxisData = xAxisData, linesParameters = linesParameters)
 
     Canvas(
         modifier = modifier
@@ -74,9 +74,10 @@ internal fun ChartContent(
                 detectTapGestures { offset ->
                     onChartClick(offset.x, offset.y)
                 }
-            }) {
+            }
+    ) {
         val textLayoutResult = textMeasure.measure(
-            text = AnnotatedString(xAxisData.last().toString()),
+            text = AnnotatedString(xAxisData.last()),
         ).size.width
         val spacingX = (size.width / 50.dp.toPx()).dp
         val spacingY = (size.height / 8.dp.toPx()).dp
@@ -180,15 +181,11 @@ internal fun ChartContent(
 }
 
 private fun List<LineParameters>.getUpperValue(): Double {
-    val max = this.flatMap { item -> item.data }.maxOrNull() ?: 0.0
-    // Add a 10% buffer so the point isn't touching the very top
-    return if (max > 0) max * 1.1 else max * 0.9
+    return this.flatMap { item -> item.data }.maxOrNull()?.plus(1.0) ?: 0.0
 }
 
 private fun List<LineParameters>.getLowerValue(): Double {
-    val min = this.flatMap { item -> item.data }.minOrNull() ?: 0.0
-    // Allow lowerValue to be negative. If min is -100, lowerValue becomes -110.
-    return if (min < 0) min * 1.1 else min * 0.9
+    return this.flatMap { item -> item.data }.minOrNull() ?: 0.0
 }
 
 private fun CoroutineScope.collectToSnapShotFlow(
@@ -203,3 +200,4 @@ private fun CoroutineScope.collectToSnapShotFlow(
         }
     }
 }
+
