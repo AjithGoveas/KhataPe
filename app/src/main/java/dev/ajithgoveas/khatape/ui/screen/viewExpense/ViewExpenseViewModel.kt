@@ -9,29 +9,27 @@ import dev.ajithgoveas.khatape.domain.model.Transaction
 import dev.ajithgoveas.khatape.domain.usecase.DeleteTransactionUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetFriendByIdUseCase
 import dev.ajithgoveas.khatape.domain.usecase.GetTransactionByIdUseCase
+import dev.ajithgoveas.khatape.domain.usecase.SettleTransactionUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// A sealed class for all possible side effects or one-time events
 sealed class ViewExpenseSideEffect {
     data class ShowError(val message: String) : ViewExpenseSideEffect()
     object NavigateBack : ViewExpenseSideEffect()
-
-    // Add other side effects like a navigation event to the edit screen
     data class NavigateToEdit(val expenseId: Long) : ViewExpenseSideEffect()
+    object TransactionSettled : ViewExpenseSideEffect()
 }
 
-// Data class to hold the UI state for ViewExpenseScreen
 data class ViewExpenseUiState(
     val transaction: Transaction? = null,
     val friend: Friend? = null,
@@ -40,17 +38,18 @@ data class ViewExpenseUiState(
     val isDeleting: Boolean = false
 )
 
-// Sealed class for all user actions on the ViewExpenseScreen
 sealed class ViewExpenseEvent {
     object DeleteClicked : ViewExpenseEvent()
     object EditClicked : ViewExpenseEvent()
+    object SettleClicked : ViewExpenseEvent()
 }
 
 @HiltViewModel
 class ViewExpenseViewModel @Inject constructor(
     private val getTransactionByIdUseCase: GetTransactionByIdUseCase,
     private val getFriendByIdUseCase: GetFriendByIdUseCase,
-    private val deleteTransactionUseCase: DeleteTransactionUseCase
+    private val deleteTransactionUseCase: DeleteTransactionUseCase,
+    private val settleTransactionUseCase: SettleTransactionUseCase
 ) : ViewModel() {
 
     private val expenseId = MutableStateFlow<Long?>(null)
@@ -58,23 +57,23 @@ class ViewExpenseViewModel @Inject constructor(
     private val _sideEffects = Channel<ViewExpenseSideEffect>(Channel.BUFFERED)
     val sideEffects = _sideEffects.receiveAsFlow()
 
-    // Build uiState directly from flows, no manual collect
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<ViewExpenseUiState> = expenseId
         .flatMapLatest { id ->
             if (id == null) {
                 flowOf(ViewExpenseUiState(isLoading = false, isError = true))
             } else {
+                // Step 1: Observe the Transaction Flow (Hot from Room)
                 getTransactionByIdUseCase(id).flatMapLatest { transaction ->
                     if (transaction == null) {
                         flowOf(ViewExpenseUiState(isLoading = false, isError = true))
                     } else {
-                        combine(
-                            getFriendByIdUseCase(transaction.friendId),
-                            flowOf(transaction)
-                        ) { friend, txn ->
+                        // Step 2: Directly map the Friend data into the state.
+                        // By mapping here, we ensure that every time 'transaction' emits
+                        // (like when isSettled changes), this block produces a NEW UiState.
+                        getFriendByIdUseCase(transaction.friendId).map { friend ->
                             ViewExpenseUiState(
-                                transaction = txn,
+                                transaction = transaction,
                                 friend = friend?.toDomain(),
                                 isLoading = false,
                                 isError = false
@@ -86,7 +85,7 @@ class ViewExpenseViewModel @Inject constructor(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.WhileSubscribed(5000), // Started eagerly so updates are never missed
             initialValue = ViewExpenseUiState(isLoading = true)
         )
 
@@ -98,6 +97,27 @@ class ViewExpenseViewModel @Inject constructor(
         when (event) {
             ViewExpenseEvent.DeleteClicked -> handleDelete()
             ViewExpenseEvent.EditClicked -> handleEdit()
+            ViewExpenseEvent.SettleClicked -> handleSettle()
+        }
+    }
+
+    private fun handleSettle() {
+        val transaction = uiState.value.transaction ?: return
+        if (transaction.isSettled) return
+
+        viewModelScope.launch {
+            try {
+                // Result triggers the side effect, but the UI update comes
+                // automatically through the reactive Flow above.
+                val result = settleTransactionUseCase(transactionId = transaction.id)
+                if (result > 0) {
+                    _sideEffects.send(ViewExpenseSideEffect.TransactionSettled)
+                } else {
+                    _sideEffects.send(ViewExpenseSideEffect.ShowError("Could not settle transaction."))
+                }
+            } catch (e: Exception) {
+                _sideEffects.send(ViewExpenseSideEffect.ShowError("Error: ${e.message}"))
+            }
         }
     }
 
@@ -105,8 +125,6 @@ class ViewExpenseViewModel @Inject constructor(
         val transaction = uiState.value.transaction ?: return
         viewModelScope.launch {
             try {
-                // Optimistically update state
-                _sideEffects.send(ViewExpenseSideEffect.ShowError("Deleting..."))
                 deleteTransactionUseCase(transaction.id)
                 _sideEffects.send(ViewExpenseSideEffect.NavigateBack)
             } catch (_: Exception) {

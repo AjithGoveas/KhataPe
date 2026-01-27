@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import dev.ajithgoveas.khatape.data.local.entity.TransactionEntity
 import dev.ajithgoveas.khatape.domain.model.TransactionDirection
 import kotlinx.coroutines.flow.Flow
@@ -27,20 +28,8 @@ interface TransactionDao {
     @Query("UPDATE transactions SET isSettled = 1 WHERE id = :id")
     suspend fun markSettled(id: Long): Int
 
-    @Query(
-        """
-        UPDATE transactions 
-        SET amount = :amount, direction = :direction, description = :description, timestamp = :timestamp 
-        WHERE id = :transactionId
-    """
-    )
-    suspend fun updateTransactions(
-        transactionId: Long,
-        amount: Double,
-        direction: TransactionDirection,
-        description: String,
-        timestamp: Long
-    ): Int
+    @Update
+    suspend fun update(transaction: TransactionEntity): Int
 
     @Query(
         """

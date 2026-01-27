@@ -37,32 +37,9 @@ class TransactionRepository @Inject constructor(
     suspend fun settleTransaction(transactionId: Long): Int =
         transactionDao.markSettled(id = transactionId)
 
-    suspend fun updateTransaction(
-        transactionId: Long,
-        amount: Double,
-        direction: TransactionDirection,
-        description: String,
-        dueDate: Long?,
-        timestamp: Long
-    ): Int {
-        return if (dueDate != null) {
-            transactionDao.updateTransactionsWithDueDate(
-                transactionId,
-                amount,
-                direction,
-                description,
-                dueDate,
-                timestamp
-            )
-        } else {
-            transactionDao.updateTransactions(
-                transactionId,
-                amount,
-                direction,
-                description,
-                timestamp
-            )
-        }
+    // Inside TransactionRepository.kt
+    suspend fun updateTransaction(transaction: TransactionEntity): Int {
+        return transactionDao.update(transaction) // Uses the @Update annotation
     }
 
     // DELETE: Deletes a transaction by its ID.
